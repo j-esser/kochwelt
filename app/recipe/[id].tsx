@@ -300,9 +300,9 @@ export default function RecipeDetailScreen() {
               </>
             ) : (
               <>
-                <Ionicons name="calendar-outline" size={18} color="#ffffff" />
+                <Ionicons name="add-circle-outline" size={18} color="#ffffff" />
                 <Text style={s.addBtnText}>
-                  {WEEKDAYS_LONG[selectedDay]}, {selectedSlot === 'mittag' ? 'Mittag' : 'Abend'}
+                  + {WEEKDAYS_LONG[selectedDay]}, {selectedSlot === 'mittag' ? 'Mittag' : 'Abend'}
                 </Text>
               </>
             )}
