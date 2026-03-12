@@ -8,7 +8,7 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getWeekPlan, setMeal, weekStart, toDateKey, addDays,
-  getCookCountsLastNDays, WEEKDAYS, WEEKDAYS_LONG, type WeekPlan, type MealSlot,
+  getCookCountsLastNDays, getCookDatesForRecipe, WEEKDAYS, WEEKDAYS_LONG, type WeekPlan, type MealSlot,
 } from '../../services/plannerStore';
 import { getAllRecipes, seedIfEmpty, type Recipe } from '../../services/recipeStore';
 
@@ -68,10 +68,22 @@ function RecipePicker({
                   <View style={p.recipeTitleRow}>
                     <Text style={[p.recipeTitle, { flex: 1 }]} numberOfLines={2}>{r.title}</Text>
                     {(cookCounts[r.id] ?? 0) > 0 && (
-                      <View style={p.cookBadge}>
-                        <Ionicons name="flame-outline" size={11} color="#f97316" />
-                        <Text style={p.cookBadgeText}>{cookCounts[r.id]}×</Text>
-                      </View>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          const dates = await getCookDatesForRecipe(r.id, 28);
+                          const formatted = dates.map(d => {
+                            const [, m, day] = d.split('-');
+                            return `${parseInt(day)}.${parseInt(m)}.`;
+                          }).join(', ');
+                          Alert.alert('Gekocht am', formatted);
+                        }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <View style={p.cookBadge}>
+                          <Ionicons name="flame-outline" size={11} color="#f97316" />
+                          <Text style={p.cookBadgeText}>{cookCounts[r.id]}×</Text>
+                        </View>
+                      </TouchableOpacity>
                     )}
                   </View>
                   <Text style={p.recipeMeta}>{r.cookTime} min · {r.categories[0] ?? '—'}</Text>

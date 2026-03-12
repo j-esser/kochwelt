@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useFocusEffect } from 'expo-router';
 // Stack is used to hide the default header
@@ -8,20 +8,34 @@ import {
   getAllRecipes, seedIfEmpty, RECIPE_TABS,
   type Recipe,
 } from '../../services/recipeStore';
-import { getCookCountsLastNDays } from '../../services/plannerStore';
+import { getCookCountsLastNDays, getCookDatesForRecipe } from '../../services/plannerStore';
 
 // ─── Recipe Card ──────────────────────────────────────────────────────────────
 
+function formatCookDates(dates: string[]): string {
+  return dates.map(d => {
+    const [, m, day] = d.split('-');
+    return `${parseInt(day)}.${parseInt(m)}.`;
+  }).join(', ');
+}
+
 function RecipeCard({ recipe, cookCount, onPress }: { recipe: Recipe; cookCount?: number; onPress: () => void }) {
+  async function showCookDates() {
+    const dates = await getCookDatesForRecipe(recipe.id, 28);
+    Alert.alert('Gekocht am', formatCookDates(dates));
+  }
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
       <View style={styles.cardHeader}>
         <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={2}>{recipe.title}</Text>
         {cookCount != null && cookCount > 0 && (
-          <View style={styles.cookBadge}>
-            <Ionicons name="flame-outline" size={11} color="#f97316" />
-            <Text style={styles.cookBadgeText}>{cookCount}×</Text>
-          </View>
+          <TouchableOpacity onPress={showCookDates} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <View style={styles.cookBadge}>
+              <Ionicons name="flame-outline" size={11} color="#f97316" />
+              <Text style={styles.cookBadgeText}>{cookCount}×</Text>
+            </View>
+          </TouchableOpacity>
         )}
       </View>
       <View style={styles.cardMeta}>

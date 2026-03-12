@@ -8,7 +8,7 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getRecipeById, deleteRecipe, type Recipe } from '../../services/recipeStore';
 import {
-  getCookCountsLastNDays, setMeal, weekStart, addDays, toDateKey,
+  getCookCountsLastNDays, getCookDatesForRecipe, setMeal, weekStart, addDays, toDateKey,
   WEEKDAYS, WEEKDAYS_LONG, type MealSlot,
 } from '../../services/plannerStore';
 
@@ -131,10 +131,22 @@ export default function RecipeDetailScreen() {
               </View>
             ))}
             {cookCount > 0 && (
-              <View style={s.cookChip}>
-                <Ionicons name="flame-outline" size={13} color="#f97316" />
-                <Text style={s.cookChipText}>{cookCount}× in 4 Wochen</Text>
-              </View>
+              <TouchableOpacity
+                onPress={async () => {
+                  const dates = await getCookDatesForRecipe(recipe.id, 28);
+                  const formatted = dates.map(d => {
+                    const [, m, day] = d.split('-');
+                    return `${parseInt(day)}.${parseInt(m)}.`;
+                  }).join(', ');
+                  Alert.alert('Gekocht am', formatted);
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <View style={s.cookChip}>
+                  <Ionicons name="flame-outline" size={13} color="#f97316" />
+                  <Text style={s.cookChipText}>{cookCount}× in 4 Wochen</Text>
+                </View>
+              </TouchableOpacity>
             )}
           </View>
 
