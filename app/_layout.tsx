@@ -22,9 +22,9 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="recipe/[id]" options={{ headerShown: true }} />
-        <Stack.Screen name="recipe/new" options={{ headerShown: true }} />
-        <Stack.Screen name="recipe/edit/[id]" options={{ headerShown: true }} />
+        <Stack.Screen name="recipe/[id]" options={{ headerShown: true, headerBackTitle: 'Zurück' }} />
+        <Stack.Screen name="recipe/new" options={{ headerShown: true, headerBackTitle: 'Zurück' }} />
+        <Stack.Screen name="recipe/edit/[id]" options={{ headerShown: true, headerBackTitle: 'Zurück' }} />
       </Stack>
     </SafeAreaProvider>
   );

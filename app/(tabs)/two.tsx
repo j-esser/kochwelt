@@ -13,13 +13,13 @@ import {
 } from '../../services/shoppingList';
 
 const CAT_ICONS: Record<string, string> = {
-  'Gemüse & Obst': '🥦',
-  'Fleisch & Fisch': '🥩',
-  'Mopro': '🧀',
-  'Trockensortiment': '🌾',
-  'Tiefkühl': '❄️',
-  'Vorrat': '🫙',
-  'Sonstiges': '🛍️',
+  'Gemüse & Obst': 'leaf-outline',
+  'Fleisch & Fisch': 'fish-outline',
+  'Mopro': 'egg-outline',
+  'Trockensortiment': 'layers-outline',
+  'Tiefkühl': 'snow-outline',
+  'Vorrat': 'archive-outline',
+  'Sonstiges': 'bag-outline',
 };
 
 export default function ShoppingScreen() {
@@ -112,7 +112,7 @@ export default function ShoppingScreen() {
           return (
             <View key={cat} style={s.catSection}>
               <TouchableOpacity style={s.catHeader} onPress={() => toggleCollapse(cat)}>
-                <Text style={s.catIcon}>{CAT_ICONS[cat] ?? '•'}</Text>
+                <Ionicons name={(CAT_ICONS[cat] ?? 'bag-outline') as any} size={18} color="#78716c" />
                 <Text style={s.catName}>{cat}</Text>
                 <Text style={s.catCount}>{doneInCat}/{items.length}</Text>
                 <Ionicons name={isCollapsed ? 'chevron-forward' : 'chevron-down'} size={16} color="#a8a29e" />
@@ -164,7 +164,7 @@ const s = StyleSheet.create({
 
   catSection: { backgroundColor: '#ffffff', borderRadius: 16, marginBottom: 10, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
   catHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14 },
-  catIcon: { fontSize: 18 },
+
   catName: { flex: 1, fontSize: 15, fontWeight: '700', color: '#1c1917' },
   catCount: { fontSize: 12, color: '#a8a29e', marginRight: 4 },
 

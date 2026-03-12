@@ -36,7 +36,7 @@ function FeaturedCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void
             </View>
             {recipe.nutrition?.kcal != null && (
               <View style={s.featuredChip}>
-                <Text style={s.featuredChipText}>{recipe.nutrition.kcal} kcal</Text>
+                <Text style={s.featuredChipText}>{Math.round(recipe.nutrition.kcal / (recipe.portions || 1))} kcal/Port.</Text>
               </View>
             )}
           </View>
@@ -91,7 +91,7 @@ export default function HomeScreen() {
             style={s.heroOverlay}
           />
           <View style={s.heroText}>
-            <Text style={s.heroGreeting}>{getGreeting()} 👋</Text>
+            <Text style={s.heroGreeting}>{getGreeting()}</Text>
             <Text style={s.heroTitle}>Meine Kochwelt</Text>
             <Text style={s.heroSub}>{recipes.length} Rezepte · Deine persönliche Küche</Text>
           </View>

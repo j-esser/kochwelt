@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity, Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
+import * as DocumentPicker from 'expo-document-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { saveRecipe, createId, type Recipe, type Ingredient } from '../services/recipeStore';
 
 const RECIPE_TABS = [
@@ -35,6 +38,54 @@ function classifyIngredient(name: string): string {
   return best;
 }
 
+// ─── ISO 8601 duration → minutes ──────────────────────────────────────────────
+function parseDuration(d: string): number {
+  if (!d) return 40;
+  const m = d.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
+  if (!m) return 40;
+  return (parseInt(m[1] ?? '0') * 60) + parseInt(m[2] ?? '0');
+}
+
+// ─── JSON-LD Recipe extractor ─────────────────────────────────────────────────
+function extractFromJsonLd(data: any): Partial<{
+  title: string; description: string; cookTime: number; portions: number;
+  ingredientsText: string; reference: string; kcal: string;
+  categories: string[];
+}> {
+  const instructions = Array.isArray(data.recipeInstructions)
+    ? data.recipeInstructions
+        .map((s: any) => typeof s === 'string' ? s : (s.text ?? '')).join('\n\n')
+    : (data.recipeInstructions ?? '');
+
+  const ingredientsRaw: string[] = Array.isArray(data.recipeIngredient)
+    ? data.recipeIngredient : [];
+
+  const portionsRaw = data.recipeYield;
+  const portions = typeof portionsRaw === 'number'
+    ? portionsRaw
+    : parseInt(Array.isArray(portionsRaw) ? portionsRaw[0] : String(portionsRaw ?? '2'));
+
+  const cookTimeRaw = data.cookTime ?? data.totalTime ?? '';
+  const cookTime = typeof cookTimeRaw === 'number'
+    ? cookTimeRaw : parseDuration(String(cookTimeRaw));
+
+  const kcal = data.nutrition?.calories
+    ? String(parseInt(data.nutrition.calories)) : '';
+
+  return {
+    title: data.name ?? '',
+    description: instructions,
+    cookTime: isNaN(cookTime) ? 40 : cookTime,
+    portions: isNaN(portions) ? 2 : portions,
+    ingredientsText: ingredientsRaw.join('\n'),
+    reference: data.url ?? data['@id'] ?? '',
+    kcal,
+    categories: [],
+  };
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 interface Props {
   initial?: Recipe;
   title: string;
@@ -56,6 +107,99 @@ export default function RecipeForm({ initial, title }: Props) {
   const [ingredientsText, setIngredientsText] = useState(
     initial?.ingredients.map(i => `${i.amount} ${i.name}`.trim()).join('\n') ?? ''
   );
+
+  // Import state
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [importing, setImporting] = useState(false);
+
+  function applyImport(data: Partial<{
+    title: string; description: string; cookTime: number; portions: number;
+    ingredientsText: string; reference: string; kcal: string; categories: string[];
+  }>) {
+    if (data.title) setRecipeTitle(data.title);
+    if (data.description) setDescription(data.description);
+    if (data.cookTime) setCookTime(String(data.cookTime));
+    if (data.portions) setPortions(String(data.portions));
+    if (data.ingredientsText) setIngredientsText(data.ingredientsText);
+    if (data.reference) setReference(data.reference);
+    if (data.kcal) setKcal(data.kcal);
+    if (data.categories?.length) setSelectedCats(data.categories);
+  }
+
+  async function handleUrlImport() {
+    if (!urlInput.trim()) return;
+    setImporting(true);
+    try {
+      const res = await fetch(urlInput.trim());
+      const html = await res.text();
+
+      // Find all JSON-LD blocks
+      const regex = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+      let match;
+      let found = false;
+      while ((match = regex.exec(html)) !== null) {
+        try {
+          const parsed = JSON.parse(match[1]);
+          const candidates = [parsed, ...(parsed['@graph'] ?? [])];
+          for (const item of candidates) {
+            if (item?.['@type'] === 'Recipe' || item?.['@type']?.includes?.('Recipe')) {
+              applyImport(extractFromJsonLd(item));
+              found = true;
+              break;
+            }
+          }
+          if (found) break;
+        } catch { /* skip malformed JSON-LD blocks */ }
+      }
+
+      if (!found) {
+        Alert.alert('Kein Rezept gefunden', 'Diese Seite enthält keine strukturierten Rezeptdaten (JSON-LD). Versuche eine andere URL.');
+      } else {
+        setShowUrlInput(false);
+        setUrlInput('');
+      }
+    } catch (e) {
+      Alert.alert('Fehler', 'URL konnte nicht geladen werden. Bitte Internetverbindung prüfen.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleJsonImport() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+
+      const uri = result.assets[0].uri;
+      const text = await fetch(uri).then(r => r.text());
+      const data = JSON.parse(text);
+
+      // Support single recipe or array (export from web-app)
+      const recipe: any = Array.isArray(data) ? data[0] : data;
+      if (!recipe?.title) {
+        Alert.alert('Ungültiges Format', 'Die JSON-Datei enthält kein erkennbares Rezept.');
+        return;
+      }
+
+      applyImport({
+        title: recipe.title,
+        description: recipe.description,
+        cookTime: recipe.cookTime,
+        portions: recipe.portions,
+        ingredientsText: recipe.ingredients
+          ?.map((i: any) => `${i.amount ?? ''} ${i.name ?? ''}`.trim()).join('\n') ?? '',
+        reference: recipe.reference,
+        kcal: recipe.nutrition?.kcal != null ? String(recipe.nutrition.kcal) : '',
+        categories: recipe.categories ?? [],
+      });
+    } catch (e) {
+      Alert.alert('Fehler', 'JSON-Datei konnte nicht gelesen werden.');
+    }
+  }
 
   function toggleCat(cat: string) {
     setSelectedCats(prev =>
@@ -108,6 +252,59 @@ export default function RecipeForm({ initial, title }: Props) {
       )}} />
       <ScrollView className="flex-1 bg-stone-50" contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
 
+        {/* Import-Bereich (nur bei neuem Rezept) */}
+        {!initial && (
+          <View style={{ backgroundColor: '#fff7ed', borderRadius: 16, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#fed7aa' }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#c2410c', marginBottom: 10 }}>
+              Rezept importieren
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#f97316', borderRadius: 12, paddingVertical: 10 }}
+                onPress={() => setShowUrlInput(v => !v)}
+              >
+                <Ionicons name="link-outline" size={15} color="#fff" />
+                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Von URL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#ffffff', borderRadius: 12, paddingVertical: 10, borderWidth: 1, borderColor: '#fed7aa' }}
+                onPress={handleJsonImport}
+              >
+                <Ionicons name="document-outline" size={15} color="#f97316" />
+                <Text style={{ color: '#f97316', fontWeight: '600', fontSize: 13 }}>JSON-Datei</Text>
+              </TouchableOpacity>
+            </View>
+
+            {showUrlInput && (
+              <View style={{ marginTop: 10 }}>
+                <TextInput
+                  style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#fed7aa', paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#1c1917' }}
+                  placeholder="https://www.chefkoch.de/rezepte/..."
+                  placeholderTextColor="#a8a29e"
+                  value={urlInput}
+                  onChangeText={setUrlInput}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                />
+                <TouchableOpacity
+                  style={{ marginTop: 8, backgroundColor: importing ? '#fed7aa' : '#f97316', borderRadius: 10, paddingVertical: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
+                  onPress={handleUrlImport}
+                  disabled={importing}
+                >
+                  {importing
+                    ? <ActivityIndicator size="small" color="#f97316" />
+                    : <Ionicons name="cloud-download-outline" size={15} color="#fff" />
+                  }
+                  <Text style={{ color: importing ? '#f97316' : '#fff', fontWeight: '600', fontSize: 13 }}>
+                    {importing ? 'Lade...' : 'Importieren'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Titel */}
         <Text className="text-stone-500 text-xs font-medium mb-1 uppercase tracking-wide">Titel</Text>
         <TextInput
@@ -157,7 +354,7 @@ export default function RecipeForm({ initial, title }: Props) {
         </View>
 
         {/* Nährwerte */}
-        <Text className="text-stone-500 text-xs font-medium mb-2 uppercase tracking-wide">Nährwerte pro Portion</Text>
+        <Text className="text-stone-500 text-xs font-medium mb-2 uppercase tracking-wide">Nährwerte (gesamt für alle Portionen)</Text>
         <View className="flex-row gap-3 mb-4">
           {[
             { label: 'kcal', value: kcal, set: setKcal },

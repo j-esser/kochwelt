@@ -145,7 +145,7 @@ export default function PlanerScreen() {
     return `${fmt(monday)} – ${fmt(end)}${weekOffset === 0 ? ' (diese Woche)' : ''}`;
   })();
 
-  // weekly kcal
+  // weekly kcal (sum of kcal/Port. per planned meal)
   let totalKcal = 0;
   for (let i = 0; i < 7; i++) {
     const key = toDateKey(addDays(monday, i));
@@ -154,7 +154,7 @@ export default function PlanerScreen() {
     for (const meal of Object.values(day)) {
       const r = recipeMap[meal.recipeId];
       if (r?.nutrition?.kcal != null) {
-        totalKcal += Math.round(r.nutrition.kcal * meal.portions / (r.portions || 2));
+        totalKcal += Math.round(r.nutrition.kcal / (r.portions || 2));
       }
     }
   }
@@ -166,7 +166,7 @@ export default function PlanerScreen() {
         <Text style={ss.heading}>Wochenplaner</Text>
         {totalKcal > 0 && (
           <View style={ss.kcalBadge}>
-            <Text style={ss.kcalText}>{totalKcal} kcal gesamt</Text>
+            <Text style={ss.kcalText}>{totalKcal} kcal/Port. p. Woche</Text>
           </View>
         )}
       </View>
@@ -205,15 +205,20 @@ export default function PlanerScreen() {
 
                 return (
                   <View key={slot} style={ss.slotRow}>
-                    <Text style={ss.slotLabel}>{slot === 'mittag' ? '☀️ Mittag' : '🌙 Abend'}</Text>
+                    <View style={ss.slotLabelRow}>
+                      <Ionicons name={slot === 'mittag' ? 'sunny-outline' : 'moon-outline'} size={12} color="#78716c" />
+                      <Text style={ss.slotLabel}>{slot === 'mittag' ? 'Mittag' : 'Abend'}</Text>
+                    </View>
                     {recipe ? (
-                      <TouchableOpacity
-                        style={ss.mealChip}
-                        onLongPress={() => handleRemove(key, slot)}
-                      >
-                        <Text style={ss.mealTitle} numberOfLines={1}>{recipe.title}</Text>
-                        <Text style={ss.mealMeta}>{meal!.portions} Port.{recipe.nutrition?.kcal ? ` · ${Math.round(recipe.nutrition.kcal * meal!.portions / (recipe.portions || 2))} kcal` : ''}</Text>
-                      </TouchableOpacity>
+                      <View style={ss.mealChip}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={ss.mealTitle} numberOfLines={1}>{recipe.title}</Text>
+                          <Text style={ss.mealMeta}>{meal!.portions} Port.{recipe.nutrition?.kcal ? ` · ${Math.round(recipe.nutrition.kcal / (recipe.portions || 2))} kcal/Port.` : ''}</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => handleRemove(key, slot)} style={ss.removeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                          <Ionicons name="close-circle" size={18} color="#f97316" />
+                        </TouchableOpacity>
+                      </View>
                     ) : (
                       <TouchableOpacity
                         style={ss.emptySlot}
@@ -262,9 +267,11 @@ const ss = StyleSheet.create({
   dayDate: { fontSize: 13, color: '#a8a29e' },
 
   slotRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
-  slotLabel: { width: 80, fontSize: 12, color: '#78716c' },
+  slotLabelRow: { width: 68, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  slotLabel: { fontSize: 12, color: '#78716c' },
 
-  mealChip: { flex: 1, backgroundColor: '#fff7ed', borderRadius: 12, padding: 10 },
+  mealChip: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff7ed', borderRadius: 12, padding: 10 },
+  removeBtn: { marginLeft: 6 },
   mealTitle: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
   mealMeta: { fontSize: 11, color: '#f97316', marginTop: 2 },
 

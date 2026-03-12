@@ -6,13 +6,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { getRecipeById, deleteRecipe, type Recipe } from '../../services/recipeStore';
 
 const SHOP_ICONS: Record<string, string> = {
-  'Gemüse & Obst': '🥦',
-  'Trockensortiment': '🌾',
-  'Tiefkühl': '❄️',
-  'Mopro': '🧀',
-  'Fleisch & Fisch': '🥩',
-  'Vorrat': '🫙',
-  'Sonstiges': '🛍️',
+  'Gemüse & Obst': 'leaf-outline',
+  'Trockensortiment': 'layers-outline',
+  'Tiefkühl': 'snow-outline',
+  'Mopro': 'egg-outline',
+  'Fleisch & Fisch': 'fish-outline',
+  'Vorrat': 'archive-outline',
+  'Sonstiges': 'bag-outline',
 };
 
 export default function RecipeDetailScreen() {
@@ -84,25 +84,25 @@ export default function RecipeDetailScreen() {
             <View style={s.nutritionBox}>
               {recipe.nutrition.kcal != null && (
                 <View style={s.nutriItem}>
-                  <Text style={s.nutriValue}>{recipe.nutrition.kcal}</Text>
-                  <Text style={s.nutriLabel}>kcal</Text>
+                  <Text style={s.nutriValue}>{Math.round(recipe.nutrition.kcal / (recipe.portions || 1))}</Text>
+                  <Text style={s.nutriLabel}>kcal/Port.</Text>
                 </View>
               )}
               {recipe.nutrition.protein != null && (
                 <View style={s.nutriItem}>
-                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{recipe.nutrition.protein}g</Text>
+                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{Math.round(recipe.nutrition.protein / (recipe.portions || 1))}g</Text>
                   <Text style={s.nutriLabel}>Eiweiß</Text>
                 </View>
               )}
               {recipe.nutrition.fat != null && (
                 <View style={s.nutriItem}>
-                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{recipe.nutrition.fat}g</Text>
+                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{Math.round(recipe.nutrition.fat / (recipe.portions || 1))}g</Text>
                   <Text style={s.nutriLabel}>Fett</Text>
                 </View>
               )}
               {recipe.nutrition.carbs != null && (
                 <View style={s.nutriItem}>
-                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{recipe.nutrition.carbs}g</Text>
+                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{Math.round(recipe.nutrition.carbs / (recipe.portions || 1))}g</Text>
                   <Text style={s.nutriLabel}>Kohlenhydrate</Text>
                 </View>
               )}
@@ -127,7 +127,7 @@ export default function RecipeDetailScreen() {
           <Text style={s.sectionTitle}>Zutaten · {recipe.portions} Portionen</Text>
           {recipe.ingredients.map((ing, i) => (
             <View key={i} style={[s.ingredientRow, i < recipe.ingredients.length - 1 && s.ingredientBorder]}>
-              <Text style={s.ingredientIcon}>{SHOP_ICONS[ing.shopCategory] ?? '•'}</Text>
+              <Ionicons name={(SHOP_ICONS[ing.shopCategory] ?? 'ellipse-outline') as any} size={14} color="#a8a29e" style={s.ingredientIcon} />
               <Text style={s.ingredientAmount}>{ing.amount}</Text>
               <Text style={s.ingredientName}>{ing.name}</Text>
             </View>

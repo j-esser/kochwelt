@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useFocusEffect } from 'expo-router';
 // Stack is used to hide the default header
@@ -26,7 +26,7 @@ function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }
         </View>
         {recipe.nutrition?.kcal != null && (
           <View style={[styles.metaChip, styles.kcalChip]}>
-            <Text style={styles.kcalText}>{recipe.nutrition.kcal} kcal</Text>
+            <Text style={styles.kcalText}>{Math.round(recipe.nutrition.kcal / (recipe.portions || 1))} kcal/Port.</Text>
           </View>
         )}
       </View>
@@ -117,27 +117,30 @@ export default function RezepteScreen() {
         </View>
 
         {/* Kategorie-Tabs */}
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={RECIPE_TABS}
-          keyExtractor={t => t}
-          contentContainerStyle={styles.tabList}
-          renderItem={({ item: tab }) => {
-            const active = tab === activeTab;
-            return (
-              <TouchableOpacity
-                onPress={() => setActiveTab(tab)}
-                style={[styles.tab, active && styles.tabActive]}
-              >
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab}</Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
+        <View style={styles.tabRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabList}
+          >
+            {RECIPE_TABS.map(tab => {
+              const active = tab === activeTab;
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  onPress={() => setActiveTab(tab)}
+                  style={[styles.tab, active && styles.tabActive]}
+                >
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* Rezept-Liste */}
         <FlatList
+          style={{ flex: 1 }}
           data={filtered}
           keyExtractor={r => r.id}
           contentContainerStyle={{ paddingBottom: 20 }}
@@ -195,7 +198,8 @@ const styles = StyleSheet.create({
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 15, color: '#1c1917' },
 
-  tabList: { paddingHorizontal: 12, paddingBottom: 10, gap: 8 },
+  tabRow: { paddingVertical: 8 },
+  tabList: { paddingHorizontal: 12, gap: 8 },
   tab: {
     paddingHorizontal: 14,
     paddingVertical: 7,
