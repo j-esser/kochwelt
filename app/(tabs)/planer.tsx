@@ -8,7 +8,7 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getWeekPlan, setMeal, weekStart, toDateKey, addDays,
-  WEEKDAYS, WEEKDAYS_LONG, type WeekPlan, type MealSlot,
+  getCookCountsLastNDays, WEEKDAYS, WEEKDAYS_LONG, type WeekPlan, type MealSlot,
 } from '../../services/plannerStore';
 import { getAllRecipes, seedIfEmpty, type Recipe } from '../../services/recipeStore';
 
@@ -24,9 +24,13 @@ function RecipePicker({
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [search, setSearch] = useState('');
   const [portions, setPortions] = useState<Record<string, number>>({});
+  const [cookCounts, setCookCounts] = useState<Record<string, number>>({});
 
   useFocusEffect(useCallback(() => {
-    getAllRecipes().then(setRecipes);
+    Promise.all([getAllRecipes(), getCookCountsLastNDays(28)]).then(([r, c]) => {
+      setRecipes(r);
+      setCookCounts(c);
+    });
   }, []));
 
   const filtered = search.trim()
@@ -61,7 +65,15 @@ function RecipePicker({
             return (
               <View style={p.recipeRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={p.recipeTitle} numberOfLines={2}>{r.title}</Text>
+                  <View style={p.recipeTitleRow}>
+                    <Text style={[p.recipeTitle, { flex: 1 }]} numberOfLines={2}>{r.title}</Text>
+                    {(cookCounts[r.id] ?? 0) > 0 && (
+                      <View style={p.cookBadge}>
+                        <Ionicons name="flame-outline" size={11} color="#f97316" />
+                        <Text style={p.cookBadgeText}>{cookCounts[r.id]}×</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={p.recipeMeta}>{r.cookTime} min · {r.categories[0] ?? '—'}</Text>
                 </View>
                 <View style={p.portionCtrl}>
@@ -92,8 +104,11 @@ const p = StyleSheet.create({
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f5f5f4', borderRadius: 12, margin: 16, paddingHorizontal: 12, paddingVertical: 10 },
   searchInput: { flex: 1, fontSize: 15, color: '#1c1917' },
   recipeRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f4', gap: 10 },
+  recipeTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   recipeTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
   recipeMeta: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
+  cookBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#fff7ed', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2, marginTop: 1 },
+  cookBadgeText: { fontSize: 11, fontWeight: '700', color: '#f97316' },
   portionCtrl: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   portionNum: { fontSize: 15, fontWeight: '600', color: '#1c1917', minWidth: 18, textAlign: 'center' },
   addBtn: { backgroundColor: '#f97316', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
