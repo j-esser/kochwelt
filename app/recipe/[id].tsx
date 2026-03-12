@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Linking, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { getRecipeById, deleteRecipe, type Recipe } from '../../services/recipeStore';
 
 const SHOP_ICONS: Record<string, string> = {
@@ -25,103 +26,84 @@ export default function RecipeDetailScreen() {
   }, [id]);
 
   if (loading) {
-    return (
-      <SafeAreaView className="flex-1 bg-stone-50 items-center justify-center">
-        <ActivityIndicator size="large" color="#f97316" />
-      </SafeAreaView>
-    );
+    return <SafeAreaView style={s.center}><ActivityIndicator size="large" color="#f97316" /></SafeAreaView>;
   }
-
   if (!recipe) {
-    return (
-      <SafeAreaView className="flex-1 bg-stone-50 items-center justify-center">
-        <Text className="text-stone-500">Rezept nicht gefunden</Text>
-      </SafeAreaView>
-    );
+    return <SafeAreaView style={s.center}><Text style={{ color: '#a8a29e' }}>Rezept nicht gefunden</Text></SafeAreaView>;
   }
 
   const hasNutrition = recipe.nutrition &&
     (recipe.nutrition.kcal != null || recipe.nutrition.protein != null);
 
   function confirmDelete() {
-    Alert.alert(
-      'Rezept löschen',
-      `„${recipe!.title}" wirklich löschen?`,
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        {
-          text: 'Löschen', style: 'destructive',
-          onPress: async () => {
-            await deleteRecipe(recipe!.id);
-            router.back();
-          },
-        },
-      ]
-    );
+    Alert.alert('Rezept löschen', `„${recipe!.title}" wirklich löschen?`, [
+      { text: 'Abbrechen', style: 'cancel' },
+      { text: 'Löschen', style: 'destructive', onPress: async () => { await deleteRecipe(recipe!.id); router.back(); } },
+    ]);
   }
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: '',
-          headerRight: () => (
-            <View className="flex-row gap-4">
-              <TouchableOpacity onPress={() => router.push(`/recipe/edit/${recipe.id}`)}>
-                <Text className="text-orange-500 font-medium">Bearbeiten</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={confirmDelete}>
-                <Text className="text-red-500 font-medium">Löschen</Text>
-              </TouchableOpacity>
-            </View>
-          ),
-        }}
-      />
-      <ScrollView className="flex-1 bg-stone-50" contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Header */}
-        <View className="bg-white px-5 py-5 border-b border-stone-100">
-          <Text className="text-2xl font-bold text-stone-800 leading-tight">{recipe.title}</Text>
+      <Stack.Screen options={{
+        title: '',
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            <TouchableOpacity onPress={() => router.push(`/recipe/edit/${recipe.id}`)}>
+              <Text style={{ color: '#f97316', fontWeight: '600' }}>Bearbeiten</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={confirmDelete}>
+              <Ionicons name="trash-outline" size={20} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        ),
+      }} />
 
-          {/* Meta */}
-          <View className="flex-row flex-wrap gap-3 mt-3">
-            <View className="bg-stone-100 rounded-full px-3 py-1">
-              <Text className="text-stone-600 text-sm">⏱ {recipe.cookTime} min</Text>
+      <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 48 }}>
+        {/* Header-Karte */}
+        <View style={s.headerCard}>
+          <Text style={s.title}>{recipe.title}</Text>
+
+          <View style={s.metaRow}>
+            <View style={s.chip}>
+              <Ionicons name="time-outline" size={14} color="#78716c" />
+              <Text style={s.chipText}>{recipe.cookTime} min</Text>
             </View>
-            <View className="bg-stone-100 rounded-full px-3 py-1">
-              <Text className="text-stone-600 text-sm">👤 {recipe.portions} Port.</Text>
+            <View style={s.chip}>
+              <Ionicons name="people-outline" size={14} color="#78716c" />
+              <Text style={s.chipText}>{recipe.portions} Portionen</Text>
             </View>
             {recipe.categories.map(cat => (
-              <View key={cat} className="bg-orange-100 rounded-full px-3 py-1">
-                <Text className="text-orange-700 text-sm">{cat}</Text>
+              <View key={cat} style={s.catChip}>
+                <Text style={s.catChipText}>{cat}</Text>
               </View>
             ))}
           </View>
 
           {/* Nährwerte */}
           {hasNutrition && (
-            <View className="flex-row flex-wrap gap-4 mt-4 p-3 bg-orange-50 rounded-xl">
+            <View style={s.nutritionBox}>
               {recipe.nutrition.kcal != null && (
-                <View className="items-center">
-                  <Text className="text-orange-600 font-bold text-lg">{recipe.nutrition.kcal}</Text>
-                  <Text className="text-stone-500 text-xs">kcal</Text>
+                <View style={s.nutriItem}>
+                  <Text style={s.nutriValue}>{recipe.nutrition.kcal}</Text>
+                  <Text style={s.nutriLabel}>kcal</Text>
                 </View>
               )}
               {recipe.nutrition.protein != null && (
-                <View className="items-center">
-                  <Text className="text-stone-700 font-semibold text-lg">{recipe.nutrition.protein}g</Text>
-                  <Text className="text-stone-500 text-xs">Eiweiß</Text>
+                <View style={s.nutriItem}>
+                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{recipe.nutrition.protein}g</Text>
+                  <Text style={s.nutriLabel}>Eiweiß</Text>
                 </View>
               )}
               {recipe.nutrition.fat != null && (
-                <View className="items-center">
-                  <Text className="text-stone-700 font-semibold text-lg">{recipe.nutrition.fat}g</Text>
-                  <Text className="text-stone-500 text-xs">Fett</Text>
+                <View style={s.nutriItem}>
+                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{recipe.nutrition.fat}g</Text>
+                  <Text style={s.nutriLabel}>Fett</Text>
                 </View>
               )}
               {recipe.nutrition.carbs != null && (
-                <View className="items-center">
-                  <Text className="text-stone-700 font-semibold text-lg">{recipe.nutrition.carbs}g</Text>
-                  <Text className="text-stone-500 text-xs">Kohlenhydrate</Text>
+                <View style={s.nutriItem}>
+                  <Text style={[s.nutriValue, { color: '#1c1917' }]}>{recipe.nutrition.carbs}g</Text>
+                  <Text style={s.nutriLabel}>Kohlenhydrate</Text>
                 </View>
               )}
             </View>
@@ -130,40 +112,98 @@ export default function RecipeDetailScreen() {
           {/* Quelle */}
           {recipe.reference ? (
             recipe.reference.startsWith('http') ? (
-              <TouchableOpacity
-                className="mt-3 flex-row items-center gap-1"
-                onPress={() => Linking.openURL(recipe.reference)}
-              >
-                <Text className="text-orange-500">📖 Quelle öffnen</Text>
+              <TouchableOpacity style={s.sourceBtn} onPress={() => Linking.openURL(recipe.reference)}>
+                <Ionicons name="open-outline" size={14} color="#f97316" />
+                <Text style={s.sourceBtnText}>Quelle öffnen</Text>
               </TouchableOpacity>
             ) : (
-              <Text className="mt-3 text-stone-500 text-sm">📖 {recipe.reference}</Text>
+              <Text style={s.sourceText}>📖 {recipe.reference}</Text>
             )
           ) : null}
         </View>
 
         {/* Zutaten */}
-        <View className="px-5 pt-5">
-          <Text className="text-lg font-bold text-stone-800 mb-3">
-            Zutaten ({recipe.portions} Portionen)
-          </Text>
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>Zutaten · {recipe.portions} Portionen</Text>
           {recipe.ingredients.map((ing, i) => (
-            <View key={i} className="flex-row items-start py-2 border-b border-stone-100">
-              <Text className="text-base mr-2">{SHOP_ICONS[ing.shopCategory] ?? '•'}</Text>
-              <Text className="text-stone-500 w-24 text-sm pt-0.5">{ing.amount}</Text>
-              <Text className="text-stone-800 flex-1 text-sm">{ing.name}</Text>
+            <View key={i} style={[s.ingredientRow, i < recipe.ingredients.length - 1 && s.ingredientBorder]}>
+              <Text style={s.ingredientIcon}>{SHOP_ICONS[ing.shopCategory] ?? '•'}</Text>
+              <Text style={s.ingredientAmount}>{ing.amount}</Text>
+              <Text style={s.ingredientName}>{ing.name}</Text>
             </View>
           ))}
         </View>
 
         {/* Zubereitung */}
         {recipe.description ? (
-          <View className="px-5 pt-6">
-            <Text className="text-lg font-bold text-stone-800 mb-3">Zubereitung</Text>
-            <Text className="text-stone-700 leading-6">{recipe.description}</Text>
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Zubereitung</Text>
+            <Text style={s.descriptionText}>{recipe.description}</Text>
           </View>
         ) : null}
       </ScrollView>
     </>
   );
 }
+
+const s = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: '#f5f5f4' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f4' },
+
+  headerCard: {
+    backgroundColor: '#ffffff',
+    margin: 16,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  title: { fontSize: 20, fontWeight: '700', color: '#1c1917', lineHeight: 28 },
+
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f5f5f4', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  chipText: { fontSize: 13, color: '#57534e' },
+  catChip: { backgroundColor: '#fff7ed', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  catChipText: { fontSize: 13, color: '#ea580c', fontWeight: '500' },
+
+  nutritionBox: {
+    flexDirection: 'row',
+    backgroundColor: '#fff7ed',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 14,
+    justifyContent: 'space-around',
+  },
+  nutriItem: { alignItems: 'center' },
+  nutriValue: { fontSize: 20, fontWeight: '700', color: '#f97316' },
+  nutriLabel: { fontSize: 11, color: '#78716c', marginTop: 2 },
+
+  sourceBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  sourceBtnText: { color: '#f97316', fontSize: 14, fontWeight: '500' },
+  sourceText: { color: '#78716c', fontSize: 13, marginTop: 10 },
+
+  section: {
+    backgroundColor: '#ffffff',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1c1917', marginBottom: 12 },
+
+  ingredientRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
+  ingredientBorder: { borderBottomWidth: 1, borderBottomColor: '#f5f5f4' },
+  ingredientIcon: { fontSize: 16, width: 28 },
+  ingredientAmount: { width: 90, fontSize: 13, color: '#78716c' },
+  ingredientName: { flex: 1, fontSize: 14, color: '#1c1917' },
+
+  descriptionText: { fontSize: 15, color: '#44403c', lineHeight: 24 },
+});
