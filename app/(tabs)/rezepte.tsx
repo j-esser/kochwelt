@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 10,
     padding: 16,
+    paddingBottom: 14,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, color: '#78716c' },
   kcalChip: { backgroundColor: '#fff7ed' },
   kcalText: { fontSize: 12, color: '#f97316', fontWeight: '600' },
-  catRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  catRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10, paddingBottom: 2 },
   catBadge: {
     backgroundColor: '#fff7ed',
     borderRadius: 8,
