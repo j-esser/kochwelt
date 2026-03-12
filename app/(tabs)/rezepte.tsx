@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useFocusEffect } from 'expo-router';
+// Stack is used to hide the default header
 import { Ionicons } from '@expo/vector-icons';
 import {
   getAllRecipes, seedIfEmpty, RECIPE_TABS,
@@ -89,21 +90,15 @@ export default function RezepteScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: 'Meine Rezepte',
-          headerTitleStyle: { fontWeight: '700', fontSize: 18 },
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push('/recipe/new')}
-              style={styles.addBtn}
-            >
-              <Ionicons name="add" size={24} color="#ffffff" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+        {/* Eigener Header */}
+        <View style={styles.navBar}>
+          <Text style={styles.navTitle}>Meine Rezepte</Text>
+          <TouchableOpacity onPress={() => router.push('/recipe/new')} style={styles.addBtn}>
+            <Ionicons name="add" size={24} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
         {/* Suchfeld */}
         <View style={styles.searchWrap}>
           <Ionicons name="search-outline" size={16} color="#a8a29e" style={styles.searchIcon} />
@@ -169,6 +164,8 @@ export default function RezepteScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#f5f5f4' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f4' },
+  navBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
+  navTitle: { fontSize: 24, fontWeight: '800', color: '#1c1917' },
 
   addBtn: {
     backgroundColor: '#f97316',
