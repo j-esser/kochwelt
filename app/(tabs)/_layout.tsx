@@ -13,14 +13,19 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: '#f97316',
         tabBarInactiveTintColor: '#78716c',
-        tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#e7e5e4' },
-        headerStyle: { backgroundColor: '#ffffff' },
-        headerTintColor: '#1c1917',
-        headerTitleStyle: { fontWeight: '600' },
+        tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#e7e5e4', paddingBottom: 4 },
+        headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <TabIcon name="home-outline" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="rezepte"
         options={{
           title: 'Rezepte',
           tabBarIcon: ({ color }) => <TabIcon name="book-outline" color={color} />,

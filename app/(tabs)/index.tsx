@@ -1,250 +1,198 @@
-import { useState, useMemo, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { useCallback, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Stack, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  getAllRecipes, seedIfEmpty, RECIPE_TABS,
-  type Recipe,
-} from '../../services/recipeStore';
+import { getAllRecipes, seedIfEmpty, type Recipe } from '../../services/recipeStore';
 
-// ─── Recipe Card ──────────────────────────────────────────────────────────────
+const FOOD_IMAGE = 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80';
 
-function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 11) return 'Guten Morgen';
+  if (h < 14) return 'Guten Appetit';
+  if (h < 18) return 'Guten Nachmittag';
+  return 'Guten Abend';
+}
+
+function FeaturedCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
-      <Text style={styles.cardTitle} numberOfLines={2}>{recipe.title}</Text>
-      <View style={styles.cardMeta}>
-        <View style={styles.metaChip}>
-          <Ionicons name="time-outline" size={12} color="#a8a29e" />
-          <Text style={styles.metaText}>{recipe.cookTime} min</Text>
-        </View>
-        <View style={styles.metaChip}>
-          <Ionicons name="people-outline" size={12} color="#a8a29e" />
-          <Text style={styles.metaText}>{recipe.portions} Port.</Text>
-        </View>
-        {recipe.nutrition?.kcal != null && (
-          <View style={[styles.metaChip, styles.kcalChip]}>
-            <Text style={styles.kcalText}>{recipe.nutrition.kcal} kcal</Text>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={s.featuredCard}>
+      <LinearGradient colors={['#f97316', '#ea580c']} style={s.featuredGradient}>
+        <View style={s.featuredContent}>
+          <View style={s.featuredBadge}>
+            <Text style={s.featuredBadgeText}>Rezept des Tages</Text>
           </View>
-        )}
-      </View>
-      {recipe.categories.length > 0 && (
-        <View style={styles.catRow}>
-          {recipe.categories.map(cat => (
-            <View key={cat} style={styles.catBadge}>
-              <Text style={styles.catText}>{cat}</Text>
+          <Text style={s.featuredTitle} numberOfLines={2}>{recipe.title}</Text>
+          <View style={s.featuredMeta}>
+            <View style={s.featuredChip}>
+              <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.8)" />
+              <Text style={s.featuredChipText}>{recipe.cookTime} min</Text>
             </View>
-          ))}
+            <View style={s.featuredChip}>
+              <Ionicons name="people-outline" size={12} color="rgba(255,255,255,0.8)" />
+              <Text style={s.featuredChipText}>{recipe.portions} Portionen</Text>
+            </View>
+            {recipe.nutrition?.kcal != null && (
+              <View style={s.featuredChip}>
+                <Text style={s.featuredChipText}>{recipe.nutrition.kcal} kcal</Text>
+              </View>
+            )}
+          </View>
         </View>
-      )}
+        <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" style={s.featuredArrow} />
+      </LinearGradient>
     </TouchableOpacity>
   );
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+function QuickRecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.75} style={s.quickCard}>
+      <View style={s.quickIconBox}>
+        <Ionicons name="restaurant-outline" size={22} color="#f97316" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={s.quickTitle} numberOfLines={2}>{recipe.title}</Text>
+        <Text style={s.quickMeta}>{recipe.cookTime} min · {recipe.categories[0] ?? '—'}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color="#d6d3d1" />
+    </TouchableOpacity>
+  );
+}
 
-export default function RezepteScreen() {
+export default function HomeScreen() {
   const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('Alle');
 
   useFocusEffect(useCallback(() => {
     (async () => {
       await seedIfEmpty();
       setRecipes(await getAllRecipes());
-      setLoading(false);
     })();
   }, []));
 
-  const filtered = useMemo(() => {
-    let list = recipes;
-    if (activeTab === 'Ohne Kategorie') {
-      list = list.filter(r => !r.categories || r.categories.length === 0);
-    } else if (activeTab !== 'Alle') {
-      list = list.filter(r => r.categories.includes(activeTab));
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(r =>
-        r.title.toLowerCase().includes(q) ||
-        r.description.toLowerCase().includes(q) ||
-        r.ingredients.some(i => i.name.toLowerCase().includes(q)) ||
-        r.categories.some(c => c.toLowerCase().includes(q))
-      );
-    }
-    return list;
-  }, [recipes, activeTab, search]);
+  const featured = recipes.length > 0
+    ? recipes[Math.floor(Math.random() * Math.min(10, recipes.length))]
+    : null;
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color="#f97316" />
-        <Text style={{ color: '#a8a29e', marginTop: 12 }}>Rezepte werden geladen…</Text>
-      </SafeAreaView>
-    );
-  }
+  const recent = recipes.slice(0, 5);
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: 'Meine Rezepte',
-          headerTitleStyle: { fontWeight: '700', fontSize: 18 },
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push('/recipe/new')}
-              style={styles.addBtn}
-            >
-              <Ionicons name="add" size={24} color="#ffffff" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      <SafeAreaView style={styles.screen} edges={['bottom']}>
-        {/* Suchfeld */}
-        <View style={styles.searchWrap}>
-          <Ionicons name="search-outline" size={16} color="#a8a29e" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Rezepte suchen…"
-            placeholderTextColor="#a8a29e"
-            value={search}
-            onChangeText={setSearch}
+    <SafeAreaView style={s.screen} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+
+        {/* Hero */}
+        <View style={s.hero}>
+          <Image source={{ uri: FOOD_IMAGE }} style={s.heroImage} resizeMode="cover" />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.65)']}
+            style={s.heroOverlay}
           />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color="#a8a29e" />
-            </TouchableOpacity>
-          )}
+          <View style={s.heroText}>
+            <Text style={s.heroGreeting}>{getGreeting()} 👋</Text>
+            <Text style={s.heroTitle}>Meine Kochwelt</Text>
+            <Text style={s.heroSub}>{recipes.length} Rezepte · Deine persönliche Küche</Text>
+          </View>
         </View>
 
-        {/* Kategorie-Tabs */}
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={RECIPE_TABS}
-          keyExtractor={t => t}
-          contentContainerStyle={styles.tabList}
-          renderItem={({ item: tab }) => {
-            const active = tab === activeTab;
-            return (
-              <TouchableOpacity
-                onPress={() => setActiveTab(tab)}
-                style={[styles.tab, active && styles.tabActive]}
-              >
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab}</Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
+        {/* Stats */}
+        <View style={s.statsRow}>
+          <View style={s.statCard}>
+            <Ionicons name="book-outline" size={22} color="#f97316" />
+            <Text style={s.statValue}>{recipes.length}</Text>
+            <Text style={s.statLabel}>Rezepte</Text>
+          </View>
+          <View style={s.statCard}>
+            <Ionicons name="calendar-outline" size={22} color="#f97316" />
+            <Text style={s.statValue}>0</Text>
+            <Text style={s.statLabel}>Diese Woche</Text>
+          </View>
+          <TouchableOpacity style={[s.statCard, s.statCardAction]} onPress={() => router.push('/recipe/new')}>
+            <Ionicons name="add-circle-outline" size={22} color="#ffffff" />
+            <Text style={[s.statLabel, { color: '#ffffff', marginTop: 4 }]}>Neu</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* Rezept-Liste */}
-        <FlatList
-          data={filtered}
-          keyExtractor={r => r.id}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          renderItem={({ item }) => (
-            <RecipeCard recipe={item} onPress={() => router.push(`/recipe/${item.id}`)} />
-          )}
-          ListHeaderComponent={
-            <Text style={styles.count}>{filtered.length} Rezept{filtered.length !== 1 ? 'e' : ''}</Text>
-          }
-          ListEmptyComponent={
-            <View style={styles.center}>
-              <Ionicons name="book-outline" size={48} color="#d6d3d1" />
-              <Text style={{ color: '#a8a29e', marginTop: 12, fontSize: 16 }}>Keine Rezepte gefunden</Text>
-            </View>
-          }
-        />
-      </SafeAreaView>
-    </>
+        {/* Rezept des Tages */}
+        {featured && (
+          <View style={s.section}>
+            <FeaturedCard
+              recipe={featured}
+              onPress={() => router.push(`/recipe/${featured.id}`)}
+            />
+          </View>
+        )}
+
+        {/* Rezepte entdecken */}
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <Text style={s.sectionTitle}>Rezepte entdecken</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/rezepte')}>
+              <Text style={s.sectionLink}>Alle anzeigen</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={s.quickList}>
+            {recent.map(r => (
+              <QuickRecipeCard
+                key={r.id}
+                recipe={r}
+                onPress={() => router.push(`/recipe/${r.id}`)}
+              />
+            ))}
+          </View>
+        </View>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#f5f5f4' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f4' },
 
-  addBtn: {
-    backgroundColor: '#f97316',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  hero: { height: 260, position: 'relative' },
+  heroImage: { width: '100%', height: '100%' },
+  heroOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  heroText: { position: 'absolute', bottom: 24, left: 20, right: 20 },
+  heroGreeting: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '500' },
+  heroTitle: { color: '#ffffff', fontSize: 28, fontWeight: '800', marginTop: 2 },
+  heroSub: { color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 4 },
 
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+  statsRow: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 16 },
+  statCard: {
+    flex: 1, backgroundColor: '#ffffff', borderRadius: 16,
+    padding: 14, alignItems: 'center',
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1,
   },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 15, color: '#1c1917' },
+  statCardAction: { backgroundColor: '#f97316' },
+  statValue: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginTop: 4 },
+  statLabel: { fontSize: 11, color: '#78716c', marginTop: 2 },
 
-  tabList: { paddingHorizontal: 12, paddingBottom: 10, gap: 8 },
-  tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e7e5e4',
-  },
-  tabActive: { backgroundColor: '#f97316', borderColor: '#f97316' },
-  tabText: { fontSize: 13, fontWeight: '500', color: '#57534e' },
-  tabTextActive: { color: '#ffffff' },
+  section: { marginHorizontal: 16, marginTop: 20 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: '#1c1917' },
+  sectionLink: { fontSize: 13, color: '#f97316', fontWeight: '500' },
 
-  count: { fontSize: 12, color: '#a8a29e', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
+  featuredCard: { borderRadius: 20, overflow: 'hidden' },
+  featuredGradient: { flexDirection: 'row', alignItems: 'center', padding: 20, minHeight: 110 },
+  featuredContent: { flex: 1 },
+  featuredBadge: { backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start', marginBottom: 8 },
+  featuredBadgeText: { color: '#ffffff', fontSize: 11, fontWeight: '600' },
+  featuredTitle: { color: '#ffffff', fontSize: 17, fontWeight: '700', lineHeight: 24 },
+  featuredMeta: { flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap' },
+  featuredChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  featuredChipText: { color: '#ffffff', fontSize: 12 },
+  featuredArrow: { marginLeft: 8 },
 
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+  quickList: {
+    backgroundColor: '#ffffff', borderRadius: 16,
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1,
+    overflow: 'hidden',
   },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917', lineHeight: 22 },
-  cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  metaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#f5f5f4',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  metaText: { fontSize: 12, color: '#78716c' },
-  kcalChip: { backgroundColor: '#fff7ed' },
-  kcalText: { fontSize: 12, color: '#f97316', fontWeight: '600' },
-  catRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
-  catBadge: {
-    backgroundColor: '#fff7ed',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  catText: { fontSize: 12, color: '#ea580c' },
+  quickCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderBottomColor: '#f5f5f4', gap: 12 },
+  quickIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center' },
+  quickTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  quickMeta: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
 });

@@ -1,0 +1,53 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export type MealSlot = 'mittag' | 'abend';
+
+export interface PlannedMeal {
+  recipeId: string;
+  portions: number;
+}
+
+export type DayPlan = Partial<Record<MealSlot, PlannedMeal>>;
+export type WeekPlan = Record<string, DayPlan>; // key: "YYYY-MM-DD"
+
+const KEY = 'kochwelt_weekplan';
+
+export async function getWeekPlan(): Promise<WeekPlan> {
+  const raw = await AsyncStorage.getItem(KEY);
+  return raw ? JSON.parse(raw) : {};
+}
+
+export async function setMeal(date: string, slot: MealSlot, meal: PlannedMeal | null): Promise<void> {
+  const plan = await getWeekPlan();
+  if (!plan[date]) plan[date] = {};
+  if (meal === null) {
+    delete plan[date][slot];
+    if (Object.keys(plan[date]).length === 0) delete plan[date];
+  } else {
+    plan[date][slot] = meal;
+  }
+  await AsyncStorage.setItem(KEY, JSON.stringify(plan));
+}
+
+// Returns Monday of the week containing `date`
+export function weekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function toDateKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+export function addDays(date: Date, n: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+export const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+export const WEEKDAYS_LONG = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
