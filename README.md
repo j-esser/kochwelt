@@ -11,6 +11,9 @@ Persönliche Rezept- und Meal-Planning-App für iOS und Android, entwickelt mit 
 - Detailansicht: Zutaten, Zubereitung, Nährwerte (kcal/Port., Eiweiß, Fett, Kohlenhydrate), Kochzeit, Portionen
 - Rezepte erstellen, bearbeiten und löschen
 - Kategorien als Tags (Pasta, Reis, Curry, Suppe, Fisch, Fleisch, Vegetarisch, Salat, Eintopf)
+- **Import von URL**: Rezept direkt aus Chefkoch & Co. importieren (JSON-LD-Parser, kein Server nötig)
+- **Import aus JSON-Datei**: Eigene Rezeptdaten via Datei-Picker einlesen
+- **Koch-Zähler**: Badge "X× in 4 Wochen" zeigt, wie oft ein Rezept zuletzt eingeplant war
 - 40 Basis-Rezepte werden beim ersten Start automatisch geladen
 
 ### Wochenplaner
@@ -22,9 +25,11 @@ Persönliche Rezept- und Meal-Planning-App für iOS und Android, entwickelt mit 
 
 ### Einkaufsliste
 - Wird automatisch aus dem Wochenplan generiert
+- **Tagesauswahl**: Nur ausgewählte Wochentage fließen in die Liste ein (ideal für 2× Einkaufen pro Woche)
 - Zutaten werden portionsskaliert zusammengefasst
 - Gruppierung nach Einkaufskategorien (Gemüse & Obst, Fleisch & Fisch, Mopro, Trockensortiment, Tiefkühl, Vorrat, Sonstiges)
-- Checkboxen zum Abhaken, Fortschrittsbalken
+- Checkboxen zum Abhaken mit persistentem Stand (bleibt nach Tab-Wechsel erhalten)
+- Fortschrittsbalken, "Alle abhaken"-Button, Auswahl zurücksetzen
 - Kategorien ein-/ausklappbar
 - Einkaufsliste als Text teilen (iOS/Android Share-Sheet)
 
@@ -148,7 +153,6 @@ Record<"YYYY-MM-DD", {
 - Nährwert-Statistiken (wöchentliche/monatliche Charts)
 - Rezept-Bewertung (1–5 Sterne)
 - Push-Erinnerungen (Einkaufen, Kochen)
-- Import via URL (Chefkoch, etc.)
 - Foto pro Rezept
 
 ### Phase 3 (langfristig)
