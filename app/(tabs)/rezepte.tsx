@@ -103,7 +103,7 @@ export default function RezepteScreen() {
           ),
         }}
       />
-      <SafeAreaView style={styles.screen} edges={['bottom']}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         {/* Suchfeld */}
         <View style={styles.searchWrap}>
           <Ionicons name="search-outline" size={16} color="#a8a29e" style={styles.searchIcon} />
