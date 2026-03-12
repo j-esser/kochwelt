@@ -8,13 +8,22 @@ import {
   getAllRecipes, seedIfEmpty, RECIPE_TABS,
   type Recipe,
 } from '../../services/recipeStore';
+import { getCookCountsLastNDays } from '../../services/plannerStore';
 
 // ─── Recipe Card ──────────────────────────────────────────────────────────────
 
-function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
+function RecipeCard({ recipe, cookCount, onPress }: { recipe: Recipe; cookCount?: number; onPress: () => void }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
-      <Text style={styles.cardTitle} numberOfLines={2}>{recipe.title}</Text>
+      <View style={styles.cardHeader}>
+        <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={2}>{recipe.title}</Text>
+        {cookCount != null && cookCount > 0 && (
+          <View style={styles.cookBadge}>
+            <Ionicons name="flame-outline" size={11} color="#f97316" />
+            <Text style={styles.cookBadgeText}>{cookCount}×</Text>
+          </View>
+        )}
+      </View>
       <View style={styles.cardMeta}>
         <View style={styles.metaChip}>
           <Ionicons name="time-outline" size={12} color="#a8a29e" />
@@ -51,11 +60,17 @@ export default function RezepteScreen() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('Alle');
+  const [cookCounts, setCookCounts] = useState<Record<string, number>>({});
 
   useFocusEffect(useCallback(() => {
     (async () => {
       await seedIfEmpty();
-      setRecipes(await getAllRecipes());
+      const [allRecipes, counts] = await Promise.all([
+        getAllRecipes(),
+        getCookCountsLastNDays(28),
+      ]);
+      setRecipes(allRecipes);
+      setCookCounts(counts);
       setLoading(false);
     })();
   }, []));
@@ -145,7 +160,7 @@ export default function RezepteScreen() {
           keyExtractor={r => r.id}
           contentContainerStyle={{ paddingBottom: 20 }}
           renderItem={({ item }) => (
-            <RecipeCard recipe={item} onPress={() => router.push(`/recipe/${item.id}`)} />
+            <RecipeCard recipe={item} cookCount={cookCounts[item.id]} onPress={() => router.push(`/recipe/${item.id}`)} />
           )}
           ListHeaderComponent={
             <Text style={styles.count}>{filtered.length} Rezept{filtered.length !== 1 ? 'e' : ''}</Text>
@@ -227,7 +242,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   cardTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917', lineHeight: 22 },
+  cookBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#fff7ed', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3, marginTop: 2 },
+  cookBadgeText: { fontSize: 11, fontWeight: '700', color: '#f97316' },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   metaChip: {
     flexDirection: 'row',

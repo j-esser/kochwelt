@@ -51,3 +51,20 @@ export function addDays(date: Date, n: number): Date {
 
 export const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 export const WEEKDAYS_LONG = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+
+// Returns how many times each recipeId was planned in the last `days` days
+export async function getCookCountsLastNDays(days: number): Promise<Record<string, number>> {
+  const plan = await getWeekPlan();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+  const counts: Record<string, number> = {};
+  for (const [dateKey, dayPlan] of Object.entries(plan)) {
+    if (new Date(dateKey) >= cutoff) {
+      for (const meal of Object.values(dayPlan)) {
+        counts[meal.recipeId] = (counts[meal.recipeId] ?? 0) + 1;
+      }
+    }
+  }
+  return counts;
+}

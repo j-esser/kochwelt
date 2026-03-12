@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getRecipeById, deleteRecipe, type Recipe } from '../../services/recipeStore';
+import { getCookCountsLastNDays } from '../../services/plannerStore';
 
 const SHOP_ICONS: Record<string, string> = {
   'Gemüse & Obst': 'leaf-outline',
@@ -20,9 +21,15 @@ export default function RecipeDetailScreen() {
   const router = useRouter();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cookCount, setCookCount] = useState(0);
 
   useEffect(() => {
-    getRecipeById(id).then(r => { setRecipe(r); setLoading(false); });
+    (async () => {
+      const [r, counts] = await Promise.all([getRecipeById(id), getCookCountsLastNDays(28)]);
+      setRecipe(r);
+      setCookCount(counts[id] ?? 0);
+      setLoading(false);
+    })();
   }, [id]);
 
   if (loading) {
@@ -77,6 +84,12 @@ export default function RecipeDetailScreen() {
                 <Text style={s.catChipText}>{cat}</Text>
               </View>
             ))}
+            {cookCount > 0 && (
+              <View style={s.cookChip}>
+                <Ionicons name="flame-outline" size={13} color="#f97316" />
+                <Text style={s.cookChipText}>{cookCount}× in 4 Wochen</Text>
+              </View>
+            )}
           </View>
 
           {/* Nährwerte */}
@@ -168,6 +181,8 @@ const s = StyleSheet.create({
   chipText: { fontSize: 13, color: '#57534e' },
   catChip: { backgroundColor: '#fff7ed', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
   catChipText: { fontSize: 13, color: '#ea580c', fontWeight: '500' },
+  cookChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff7ed', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: '#fed7aa' },
+  cookChipText: { fontSize: 13, color: '#f97316', fontWeight: '600' },
 
   nutritionBox: {
     flexDirection: 'row',
