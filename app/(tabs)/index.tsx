@@ -5,6 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getAllRecipes, seedIfEmpty, type Recipe } from '../../services/recipeStore';
+import { getWeekPlan, weekStart, addDays, toDateKey } from '../../services/plannerStore';
 
 const FOOD_IMAGE = 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80';
 
@@ -65,11 +66,20 @@ function QuickRecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => v
 export default function HomeScreen() {
   const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [weekMealCount, setWeekMealCount] = useState(0);
 
   useFocusEffect(useCallback(() => {
     (async () => {
       await seedIfEmpty();
-      setRecipes(await getAllRecipes());
+      const [allRecipes, plan] = await Promise.all([getAllRecipes(), getWeekPlan()]);
+      setRecipes(allRecipes);
+      const monday = weekStart(new Date());
+      let count = 0;
+      for (let i = 0; i < 7; i++) {
+        const day = plan[toDateKey(addDays(monday, i))];
+        if (day) count += Object.keys(day).length;
+      }
+      setWeekMealCount(count);
     })();
   }, []));
 
@@ -99,19 +109,19 @@ export default function HomeScreen() {
 
         {/* Stats */}
         <View style={s.statsRow}>
-          <View style={s.statCard}>
+          <TouchableOpacity style={s.statCard} onPress={() => router.push('/(tabs)/rezepte')}>
             <Ionicons name="book-outline" size={22} color="#f97316" />
             <Text style={s.statValue}>{recipes.length}</Text>
             <Text style={s.statLabel}>Rezepte</Text>
-          </View>
-          <View style={s.statCard}>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.statCard} onPress={() => router.push('/(tabs)/planer')}>
             <Ionicons name="calendar-outline" size={22} color="#f97316" />
-            <Text style={s.statValue}>0</Text>
+            <Text style={s.statValue}>{weekMealCount}</Text>
             <Text style={s.statLabel}>Diese Woche</Text>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity style={[s.statCard, s.statCardAction]} onPress={() => router.push('/recipe/new')}>
             <Ionicons name="add-circle-outline" size={22} color="#ffffff" />
-            <Text style={[s.statLabel, { color: '#ffffff', marginTop: 4 }]}>Neu</Text>
+            <Text style={[s.statValue, { color: '#ffffff' }]}>Neu</Text>
           </TouchableOpacity>
         </View>
 
