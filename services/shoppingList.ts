@@ -28,7 +28,7 @@ function parseAmount(str: string): { value: number; unit: string } | null {
   return { value, unit: m[2].trim() };
 }
 
-function scaleAmount(amount: string, factor: number): string {
+export function scaleAmount(amount: string, factor: number): string {
   if (!amount.trim()) return amount;
   const parsed = parseAmount(amount);
   if (!parsed) return amount;
@@ -57,6 +57,7 @@ export function buildShoppingList(weekPlan: WeekPlan, recipeMap: Record<string, 
 
   for (const dayPlan of Object.values(weekPlan)) {
     for (const meal of Object.values(dayPlan)) {
+      if (!meal.recipeId) continue;
       const recipe = recipeMap[meal.recipeId];
       if (!recipe) continue;
       const factor = meal.portions / (recipe.portions || 2);

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity, Alert,
-  ActivityIndicator,
+  ActivityIndicator, Image,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
-import { saveRecipe, createId, type Recipe, type Ingredient } from '../services/recipeStore';
+import { saveRecipe, saveRecipePhoto, createId, type Recipe, type Ingredient } from '../services/recipeStore';
 
 const RECIPE_TABS = [
   'Pasta', 'Reis', 'Curry', 'Suppe', 'Fisch', 'Fleisch', 'Vegetarisch', 'Salat', 'Eintopf',
@@ -106,6 +108,11 @@ export default function RecipeForm({ initial, title }: Props) {
   const [carbs, setCarbs] = useState(initial?.nutrition?.carbs != null ? String(initial.nutrition.carbs) : '');
   const [ingredientsText, setIngredientsText] = useState(
     initial?.ingredients.map(i => `${i.amount} ${i.name}`.trim()).join('\n') ?? ''
+  );
+  // Generisches Fallback-Foto für neue Rezepte (Kochutensilien)
+  const DEFAULT_PHOTO = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80';
+  const [photoUri, setPhotoUri] = useState<string | null>(
+    initial?.photo ?? (initial ? null : DEFAULT_PHOTO)
   );
 
   // Import state
@@ -218,13 +225,49 @@ export default function RecipeForm({ initial, title }: Props) {
       });
   }
 
+  async function pickPhoto(source: 'camera' | 'library') {
+    const perm = source === 'camera'
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Zugriff verweigert', source === 'camera' ? 'Kamera-Zugriff benötigt.' : 'Foto-Bibliothek-Zugriff benötigt.');
+      return;
+    }
+    const result = source === 'camera'
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1 });
+    if (result.canceled) return;
+    const compressed = await ImageManipulator.manipulateAsync(
+      result.assets[0].uri,
+      [{ resize: { width: 800 } }],
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    setPhotoUri(compressed.uri);
+  }
+
+  function handlePhotoOptions() {
+    Alert.alert('Foto hinzufügen', undefined, [
+      { text: 'Kamera', onPress: () => pickPhoto('camera') },
+      { text: 'Aus Bibliothek', onPress: () => pickPhoto('library') },
+      ...(photoUri ? [{ text: 'Foto entfernen', style: 'destructive' as const, onPress: () => setPhotoUri(null) }] : []),
+      { text: 'Abbrechen', style: 'cancel' },
+    ]);
+  }
+
   async function handleSave() {
     if (!recipeTitle.trim()) {
       Alert.alert('Titel fehlt', 'Bitte einen Titel eingeben.');
       return;
     }
+    const id = initial?.id ?? createId();
+    let savedPhoto: string | undefined = undefined;
+    if (photoUri && photoUri !== initial?.photo) {
+      savedPhoto = await saveRecipePhoto(id, photoUri);
+    } else if (photoUri) {
+      savedPhoto = photoUri;
+    }
     const recipe: Recipe = {
-      id: initial?.id ?? createId(),
+      id,
       title: recipeTitle.trim(),
       categories: selectedCats,
       description: description.trim(),
@@ -238,6 +281,7 @@ export default function RecipeForm({ initial, title }: Props) {
         fat: fat ? parseInt(fat) : null,
         carbs: carbs ? parseInt(carbs) : null,
       },
+      photo: savedPhoto,
     };
     await saveRecipe(recipe);
     router.back();
@@ -304,6 +348,24 @@ export default function RecipeForm({ initial, title }: Props) {
             )}
           </View>
         )}
+
+        {/* Foto */}
+        <TouchableOpacity onPress={handlePhotoOptions} style={{ marginBottom: 20 }}>
+          {photoUri ? (
+            <View style={{ borderRadius: 16, overflow: 'hidden', height: 180 }}>
+              <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+              <View style={{ position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <Ionicons name="camera-outline" size={14} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Ändern</Text>
+              </View>
+            </View>
+          ) : (
+            <View style={{ height: 120, borderRadius: 16, backgroundColor: '#f5f5f4', borderWidth: 1.5, borderColor: '#e7e5e4', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <Ionicons name="camera-outline" size={28} color="#a8a29e" />
+              <Text style={{ color: '#a8a29e', fontSize: 13, fontWeight: '500' }}>Foto hinzufügen</Text>
+            </View>
+          )}
+        </TouchableOpacity>
 
         {/* Titel */}
         <Text className="text-stone-500 text-xs font-medium mb-1 uppercase tracking-wide">Titel</Text>

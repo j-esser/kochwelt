@@ -14,6 +14,9 @@ Persönliche Rezept- und Meal-Planning-App für iOS und Android, entwickelt mit 
 - **Import von URL**: Rezept direkt aus Chefkoch & Co. importieren (JSON-LD-Parser, kein Server nötig)
 - **Import aus JSON-Datei**: Eigene Rezeptdaten via Datei-Picker einlesen
 - **Koch-Zähler**: Badge "X× in 4 Wochen" zeigt, wie oft ein Rezept zuletzt eingeplant war
+- **Persönliche Bewertung**: 1–5 Sterne pro Rezept, editierbar via Bottom-Sheet-Modal
+- **Live-Portionsskalierung**: +/− Buttons in der Detailansicht skalieren alle Zutatenmengen live
+- Foto pro Rezept (Kamera oder Galerie), gespeichert lokal im Dateisystem
 - 40 Basis-Rezepte werden beim ersten Start automatisch geladen
 
 ### Wochenplaner
@@ -69,11 +72,17 @@ kochwelt/
 │   │   └── edit/[id].tsx      # Rezept bearbeiten
 │   └── _layout.tsx            # Root-Layout (SafeAreaProvider, Stack)
 ├── services/
-│   ├── recipeStore.ts         # Rezept-CRUD mit AsyncStorage
+│   ├── recipeStore.ts         # Rezept-CRUD mit AsyncStorage (inkl. Rating, Foto)
 │   ├── plannerStore.ts        # Wochenplan-Verwaltung
-│   └── shoppingList.ts        # Einkaufslisten-Logik (Skalierung, Gruppierung)
+│   ├── shoppingList.ts        # Einkaufslisten-Logik (Skalierung, Gruppierung)
+│   ├── nutritionGoals.ts      # Tägliche Nährwertziele
+│   ├── recipePicker.ts        # Rezept-Picker Hilfsfunktionen
+│   └── settingsStore.ts       # App-Einstellungen (AsyncStorage)
+├── components/
+│   ├── RecipeForm.tsx          # Gemeinsames Formular für neu/bearbeiten
+│   └── RecipeImage.tsx         # Foto-Picker Komponente (Kamera/Galerie)
 ├── constants/
-│   └── baselineRecipes.ts     # 40 Basis-Rezepte (Seed-Daten)
+│   └── baselineRecipes.ts     # 40 Basis-Rezepte (Seed-Daten, versioniert)
 └── app.json                   # Expo-Konfiguration
 ```
 
@@ -125,6 +134,8 @@ Im Terminal dann `i` für iOS Simulator oder `a` für Android drücken.
     carbs: number | null;
   };
   reference: string;          // URL oder Buchquelle
+  photo?: string;             // Lokaler Dateipfad oder https-URL
+  rating?: number;            // Persönliche Bewertung 1–5
 }
 ```
 
@@ -149,11 +160,13 @@ Record<"YYYY-MM-DD", {
 
 ## Roadmap
 
-### Phase 2 (geplant)
-- Nährwert-Statistiken (wöchentliche/monatliche Charts)
-- Rezept-Bewertung (1–5 Sterne)
-- Push-Erinnerungen (Einkaufen, Kochen)
-- Foto pro Rezept
+### Phase 2 (in Arbeit / fertig)
+- ✅ Rezept-Bewertung (1–5 Sterne)
+- ✅ Foto pro Rezept (Kamera / Galerie)
+- ✅ Live-Portionsskalierung in Detailansicht
+- ✅ Einstellungen-Tab (Nährwertziele, Export/Import)
+- ⏳ Nährwert-Statistiken (wöchentliche Charts)
+- ⏳ Push-Erinnerungen (Einkaufen, Kochen)
 
 ### Phase 3 (langfristig)
 - Cloud-Sync (Supabase)

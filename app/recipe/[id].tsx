@@ -1,16 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Linking, Alert,
   ActivityIndicator, StyleSheet, Modal, Pressable,
 } from 'react-native';
+import { RecipeImage } from '../../components/RecipeImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getRecipeById, deleteRecipe, type Recipe } from '../../services/recipeStore';
+import { getRecipeById, deleteRecipe, buildTeaser, setRecipeRating, type Recipe } from '../../services/recipeStore';
+import { scaleAmount } from '../../services/shoppingList';
 import {
   getCookCountsLastNDays, getCookDatesForRecipe, setMeal, weekStart, addDays, toDateKey,
   WEEKDAYS, WEEKDAYS_LONG, type MealSlot,
 } from '../../services/plannerStore';
+
+function isYouTube(url: string): boolean {
+  return /youtube\.com\/watch|youtu\.be\//.test(url);
+}
 
 const SHOP_ICONS: Record<string, string> = {
   'Gemüse & Obst': 'leaf-outline',
@@ -28,6 +34,8 @@ export default function RecipeDetailScreen() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [cookCount, setCookCount] = useState(0);
+  const [scaledPortions, setScaledPortions] = useState(1);
+  const [ratingModal, setRatingModal] = useState(false);
 
   // Planer-Modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -38,14 +46,16 @@ export default function RecipeDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     (async () => {
+      setLoading(true);
       const [r, counts] = await Promise.all([getRecipeById(id), getCookCountsLastNDays(28)]);
       setRecipe(r);
       setCookCount(counts[id] ?? 0);
+      setScaledPortions(r?.portions ?? 1);
       setLoading(false);
     })();
-  }, [id]);
+  }, [id]));
 
   function openModal() {
     if (!recipe) return;
@@ -81,6 +91,13 @@ export default function RecipeDetailScreen() {
   const hasNutrition = recipe.nutrition &&
     (recipe.nutrition.kcal != null || recipe.nutrition.protein != null);
 
+  async function handleRate(stars: number) {
+    const newRating = recipe!.rating === stars ? undefined : stars; // tap same = remove
+    await setRecipeRating(recipe!.id, newRating);
+    setRecipe(prev => prev ? { ...prev, rating: newRating } : prev);
+    setRatingModal(false);
+  }
+
   function confirmDelete() {
     Alert.alert('Rezept löschen', `„${recipe!.title}" wirklich löschen?`, [
       { text: 'Abbrechen', style: 'cancel' },
@@ -112,8 +129,11 @@ export default function RecipeDetailScreen() {
       }} />
 
       <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* Hero-Bild */}
+        <RecipeImage uri={recipe.photo} style={s.heroImage} />
+
         {/* Header-Karte */}
-        <View style={s.headerCard}>
+        <View style={[s.headerCard, { marginTop: -24, borderTopLeftRadius: 24, borderTopRightRadius: 24 }]}>
           <Text style={s.title}>{recipe.title}</Text>
 
           <View style={s.metaRow}>
@@ -121,9 +141,15 @@ export default function RecipeDetailScreen() {
               <Ionicons name="time-outline" size={14} color="#78716c" />
               <Text style={s.chipText}>{recipe.cookTime} min</Text>
             </View>
-            <View style={s.chip}>
-              <Ionicons name="people-outline" size={14} color="#78716c" />
-              <Text style={s.chipText}>{recipe.portions} Portionen</Text>
+            <View style={s.portionScaleChip}>
+              <TouchableOpacity onPress={() => setScaledPortions(p => Math.max(1, p - 1))} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="remove-circle-outline" size={18} color="#f97316" />
+              </TouchableOpacity>
+              <Ionicons name="people-outline" size={13} color="#78716c" />
+              <Text style={s.chipText}>{scaledPortions} Port.</Text>
+              <TouchableOpacity onPress={() => setScaledPortions(p => Math.min(20, p + 1))} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="add-circle-outline" size={18} color="#f97316" />
+              </TouchableOpacity>
             </View>
             {recipe.categories.map(cat => (
               <View key={cat} style={s.catChip}>
@@ -148,6 +174,18 @@ export default function RecipeDetailScreen() {
                 </View>
               </TouchableOpacity>
             )}
+            <TouchableOpacity onPress={() => setRatingModal(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginLeft: 'auto' as any }}>
+              <View style={[s.cookChip, { gap: 2 }]}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <Ionicons
+                    key={n}
+                    name={n <= (recipe.rating ?? 0) ? 'star' : 'star-outline'}
+                    size={13}
+                    color={recipe.rating ? '#f59e0b' : '#a8a29e'}
+                  />
+                ))}
+              </View>
+            </TouchableOpacity>
           </View>
 
           {/* Nährwerte */}
@@ -180,9 +218,25 @@ export default function RecipeDetailScreen() {
             </View>
           )}
 
+          {/* Auto-Teaser */}
+          {(() => {
+            const t = buildTeaser(recipe);
+            return (
+              <View style={s.teaserBox}>
+                <Text style={s.teaserAttrs}>{t.attrs}</Text>
+                {t.ingredients ? <Text style={s.teaserIngredients}>{t.ingredients}</Text> : null}
+              </View>
+            );
+          })()}
+
           {/* Quelle */}
           {recipe.reference ? (
-            recipe.reference.startsWith('http') ? (
+            isYouTube(recipe.reference) ? (
+              <TouchableOpacity style={[s.sourceBtn, s.ytBtn]} onPress={() => Linking.openURL(recipe.reference)}>
+                <Ionicons name="logo-youtube" size={16} color="#ffffff" />
+                <Text style={s.ytBtnText}>▶ Video ansehen</Text>
+              </TouchableOpacity>
+            ) : recipe.reference.startsWith('http') ? (
               <TouchableOpacity style={s.sourceBtn} onPress={() => Linking.openURL(recipe.reference)}>
                 <Ionicons name="open-outline" size={14} color="#f97316" />
                 <Text style={s.sourceBtnText}>Quelle öffnen</Text>
@@ -195,14 +249,18 @@ export default function RecipeDetailScreen() {
 
         {/* Zutaten */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Zutaten · {recipe.portions} Portionen</Text>
-          {recipe.ingredients.map((ing, i) => (
-            <View key={i} style={[s.ingredientRow, i < recipe.ingredients.length - 1 && s.ingredientBorder]}>
-              <Ionicons name={(SHOP_ICONS[ing.shopCategory] ?? 'ellipse-outline') as any} size={14} color="#a8a29e" style={s.ingredientIcon} />
-              <Text style={s.ingredientAmount}>{ing.amount}</Text>
-              <Text style={s.ingredientName}>{ing.name}</Text>
-            </View>
-          ))}
+          <Text style={s.sectionTitle}>Zutaten · {scaledPortions} {scaledPortions === 1 ? 'Portion' : 'Portionen'}</Text>
+          {recipe.ingredients.map((ing, i) => {
+            const factor = scaledPortions / (recipe.portions || 1);
+            const displayAmount = factor === 1 ? ing.amount : scaleAmount(ing.amount, factor);
+            return (
+              <View key={i} style={[s.ingredientRow, i < recipe.ingredients.length - 1 && s.ingredientBorder]}>
+                <Ionicons name={(SHOP_ICONS[ing.shopCategory] ?? 'ellipse-outline') as any} size={14} color="#a8a29e" style={s.ingredientIcon} />
+                <Text style={s.ingredientAmount}>{displayAmount}</Text>
+                <Text style={s.ingredientName}>{ing.name}</Text>
+              </View>
+            );
+          })}
         </View>
 
         {/* Zubereitung */}
@@ -221,6 +279,31 @@ export default function RecipeDetailScreen() {
           <Text style={s.fabText}>Zum Planer</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Rating-Modal */}
+      <Modal visible={ratingModal} animationType="slide" transparent onRequestClose={() => setRatingModal(false)}>
+        <Pressable style={s.modalBackdrop} onPress={() => setRatingModal(false)} />
+        <View style={s.modalSheet}>
+          <View style={s.modalHandle} />
+          <Text style={s.modalTitle}>Deine Bewertung</Text>
+          <View style={s.ratingStarRow}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <TouchableOpacity key={n} onPress={() => handleRate(n)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                <Ionicons
+                  name={n <= (recipe.rating ?? 0) ? 'star' : 'star-outline'}
+                  size={44}
+                  color={n <= (recipe.rating ?? 0) ? '#f59e0b' : '#d6d3d1'}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+          {recipe.rating && (
+            <TouchableOpacity onPress={() => handleRate(recipe.rating!)} style={s.ratingClearBtn}>
+              <Text style={s.ratingClearText}>Bewertung entfernen</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
 
       {/* Planer-Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
@@ -329,6 +412,8 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#f5f5f4' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f4' },
 
+  heroImage: { width: '100%', height: 220 },
+
   headerCard: {
     backgroundColor: '#ffffff',
     margin: 16,
@@ -342,9 +427,10 @@ const s = StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: '700', color: '#1c1917', lineHeight: 28 },
 
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12, justifyContent: 'space-between' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f5f5f4', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
   chipText: { fontSize: 13, color: '#57534e' },
+  portionScaleChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fff7ed', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: '#fed7aa' },
   catChip: { backgroundColor: '#fff7ed', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
   catChipText: { fontSize: 13, color: '#ea580c', fontWeight: '500' },
   cookChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff7ed', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, borderColor: '#fed7aa' },
@@ -365,6 +451,11 @@ const s = StyleSheet.create({
   sourceBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
   sourceBtnText: { color: '#f97316', fontSize: 14, fontWeight: '500' },
   sourceText: { color: '#78716c', fontSize: 13, marginTop: 10 },
+  ytBtn: { backgroundColor: '#ef4444', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start' },
+  ytBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
+  teaserBox: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#f5f5f4' },
+  teaserAttrs: { fontSize: 12, color: '#a8a29e', fontWeight: '500', marginBottom: 4 },
+  teaserIngredients: { fontSize: 14, color: '#57534e', fontWeight: '500' },
 
   section: {
     backgroundColor: '#ffffff',
@@ -440,6 +531,10 @@ const s = StyleSheet.create({
   portionRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   portionBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#fff7ed', alignItems: 'center', justifyContent: 'center' },
   portionValue: { fontSize: 22, fontWeight: '700', color: '#1c1917', minWidth: 32, textAlign: 'center' },
+
+  ratingStarRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, paddingVertical: 16 },
+  ratingClearBtn: { alignSelf: 'center', marginTop: 8, paddingVertical: 8 },
+  ratingClearText: { fontSize: 13, color: '#a8a29e' },
 
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#f97316', borderRadius: 16, paddingVertical: 16, marginTop: 24 },
   addBtnDone: { backgroundColor: '#22c55e' },

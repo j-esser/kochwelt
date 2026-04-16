@@ -45,6 +45,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabIcon name="cart-outline" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="einstellungen"
+        options={{
+          title: 'Einstellungen',
+          tabBarIcon: ({ color }) => <TabIcon name="settings-outline" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

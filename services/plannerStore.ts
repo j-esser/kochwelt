@@ -3,9 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type MealSlot = 'mittag' | 'abend';
 
 export interface PlannedMeal {
-  recipeId: string;
+  recipeId?: string;         // undefined bei manuellen Einträgen
   portions: number;
+  // Kalte Küche / manuelle Einträge:
+  manualTitle?: string;
+  manualNutrition?: { kcal: number; protein: number; fat: number; carbs: number };
 }
+
+export const COLD_MEAL_DEFAULTS: Record<MealSlot, PlannedMeal['manualNutrition']> = {
+  mittag: { kcal: 550, protein: 25, fat: 20, carbs: 60 },
+  abend:  { kcal: 400, protein: 20, fat: 15, carbs: 45 },
+};
 
 export type DayPlan = Partial<Record<MealSlot, PlannedMeal>>;
 export type WeekPlan = Record<string, DayPlan>; // key: "YYYY-MM-DD"
@@ -72,6 +80,27 @@ export async function getCookDatesForRecipe(recipeId: string, days: number): Pro
   return [...seen].sort();
 }
 
+// Wochenstats für Startseite-Badges
+export interface WeekStats {
+  days: number;    // Tage mit ≥1 Mahlzeit
+  meals: number;   // Gesamtanzahl Mahlzeiten
+}
+
+export async function getWeekStats(): Promise<WeekStats> {
+  const plan = await getWeekPlan();
+  const monday = weekStart(new Date());
+  let days = 0, meals = 0;
+  for (let i = 0; i < 7; i++) {
+    const key = toDateKey(addDays(monday, i));
+    const dayPlan = plan[key];
+    if (dayPlan) {
+      const count = Object.keys(dayPlan).length;
+      if (count > 0) { days++; meals += count; }
+    }
+  }
+  return { days, meals };
+}
+
 // Returns how many times each recipeId was planned in the last `days` days
 export async function getCookCountsLastNDays(days: number): Promise<Record<string, number>> {
   const plan = await getWeekPlan();
@@ -82,7 +111,7 @@ export async function getCookCountsLastNDays(days: number): Promise<Record<strin
   for (const [dateKey, dayPlan] of Object.entries(plan)) {
     if (new Date(dateKey) >= cutoff) {
       for (const meal of Object.values(dayPlan)) {
-        counts[meal.recipeId] = (counts[meal.recipeId] ?? 0) + 1;
+        if (meal.recipeId) counts[meal.recipeId] = (counts[meal.recipeId] ?? 0) + 1;
       }
     }
   }
