@@ -1,5 +1,7 @@
+import { useLocalSearchParams } from 'expo-router';
 import RecipeForm from '../../components/RecipeForm';
 
 export default function NewRecipeScreen() {
-  return <RecipeForm title="Neues Rezept" />;
+  const { importUrl } = useLocalSearchParams<{ importUrl?: string }>();
+  return <RecipeForm title="Neues Rezept" importUrl={importUrl} />;
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity, Alert,
   ActivityIndicator, Image,
@@ -91,9 +91,10 @@ function extractFromJsonLd(data: any): Partial<{
 interface Props {
   initial?: Recipe;
   title: string;
+  importUrl?: string; // Wenn gesetzt: URL-Import wird automatisch beim Öffnen gestartet
 }
 
-export default function RecipeForm({ initial, title }: Props) {
+export default function RecipeForm({ initial, title, importUrl }: Props) {
   const router = useRouter();
 
   const [recipeTitle, setRecipeTitle] = useState(initial?.title ?? '');
@@ -120,6 +121,15 @@ export default function RecipeForm({ initial, title }: Props) {
   const [urlInput, setUrlInput] = useState('');
   const [importing, setImporting] = useState(false);
 
+  // Auto-Import wenn die Seite via Deep Link mit einer URL geöffnet wurde
+  useEffect(() => {
+    if (importUrl && !initial) {
+      setUrlInput(importUrl);
+      handleUrlImport(importUrl);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [importUrl]);
+
   function applyImport(data: Partial<{
     title: string; description: string; cookTime: number; portions: number;
     ingredientsText: string; reference: string; kcal: string; categories: string[];
@@ -134,11 +144,12 @@ export default function RecipeForm({ initial, title }: Props) {
     if (data.categories?.length) setSelectedCats(data.categories);
   }
 
-  async function handleUrlImport() {
-    if (!urlInput.trim()) return;
+  async function handleUrlImport(urlOverride?: string) {
+    const url = (urlOverride ?? urlInput).trim();
+    if (!url) return;
     setImporting(true);
     try {
-      const res = await fetch(urlInput.trim());
+      const res = await fetch(url);
       const html = await res.text();
 
       // Find all JSON-LD blocks
@@ -287,13 +298,23 @@ export default function RecipeForm({ initial, title }: Props) {
     router.back();
   }
 
+  // Zeige Lade-Overlay wenn Auto-Import (via Deep Link) gerade läuft
+  const isAutoImporting = importing && !!importUrl && !initial;
+
   return (
     <>
       <Stack.Screen options={{ title, headerRight: () => (
-        <TouchableOpacity onPress={handleSave}>
-          <Text className="text-orange-500 font-semibold text-base">Speichern</Text>
+        <TouchableOpacity onPress={handleSave} disabled={isAutoImporting}>
+          <Text className={`font-semibold text-base ${isAutoImporting ? 'text-stone-300' : 'text-orange-500'}`}>Speichern</Text>
         </TouchableOpacity>
       )}} />
+      {isAutoImporting && (
+        <View style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,255,255,0.85)', zIndex: 10, alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+          <ActivityIndicator size="large" color="#f97316" />
+          <Text style={{ fontSize: 15, fontWeight: '600', color: '#57534e' }}>Rezept wird importiert …</Text>
+          <Text style={{ fontSize: 12, color: '#a8a29e', maxWidth: 260, textAlign: 'center' }}>{importUrl}</Text>
+        </View>
+      )}
       <ScrollView className="flex-1 bg-stone-50" contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
 
         {/* Import-Bereich (nur bei neuem Rezept) */}
