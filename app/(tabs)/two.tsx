@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Share,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Share, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getWeekPlan, toDateKey, weekStart, addDays, WEEKDAYS,
@@ -12,7 +14,7 @@ import {
 } from '../../services/plannerStore';
 import { getAllRecipes, type Recipe } from '../../services/recipeStore';
 import {
-  buildShoppingList, shoppingListToText, CATEGORY_ORDER,
+  buildShoppingList, shoppingListToText, shoppingListToICS, CATEGORY_ORDER,
   type ShoppingList, type ShoppingItem,
 } from '../../services/shoppingList';
 
@@ -173,6 +175,22 @@ export default function ShoppingScreen() {
     await Share.share({ message: text, title: 'Einkaufsliste' });
   }
 
+  async function handleShareICS() {
+    if (Platform.OS === 'web') {
+      const ics = shoppingListToICS(list);
+      const blob = new Blob([ics], { type: 'text/calendar' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'einkaufsliste.ics'; a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+    const ics = shoppingListToICS(list);
+    const path = FileSystem.documentDirectory + 'einkaufsliste.ics';
+    await FileSystem.writeAsStringAsync(path, ics, { encoding: FileSystem.EncodingType.UTF8 });
+    await Sharing.shareAsync(path, { mimeType: 'text/calendar', UTI: 'public.calendar' });
+  }
+
   const categories = CATEGORY_ORDER.filter(c => list[c]?.length);
 
   // Counts for progress (owned items don't need to be bought)
@@ -222,6 +240,9 @@ export default function ShoppingScreen() {
               <Ionicons name="checkmark-done-outline" size={18} color="#f97316" />
             </TouchableOpacity>
           )}
+          <TouchableOpacity onPress={handleShareICS} style={s.iconBtn}>
+            <Ionicons name="alarm-outline" size={18} color="#f97316" />
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleShare} style={s.shareBtn}>
             <Ionicons name="share-outline" size={18} color="#ffffff" />
             <Text style={s.shareBtnText}>Teilen</Text>

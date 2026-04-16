@@ -108,4 +108,35 @@ export function shoppingListToText(list: ShoppingList): string {
   return lines.join('\n');
 }
 
+export function shoppingListToICS(list: ShoppingList): string {
+  const lines: string[] = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Kochwelt//DE',
+    'X-WR-CALNAME:Einkaufsliste',
+  ];
+
+  const stamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
+  let idx = 0;
+
+  for (const cat of CATEGORY_ORDER) {
+    const items = list[cat];
+    if (!items?.length) continue;
+    for (const item of items) {
+      const uid = `kochwelt-${stamp}-${idx++}@kochwelt`;
+      const summary = [item.combined, item.name].filter(Boolean).join(' ');
+      lines.push('BEGIN:VTODO');
+      lines.push(`UID:${uid}`);
+      lines.push(`DTSTAMP:${stamp}`);
+      lines.push(`SUMMARY:${summary}`);
+      lines.push(`CATEGORIES:${cat}`);
+      lines.push('STATUS:NEEDS-ACTION');
+      lines.push('END:VTODO');
+    }
+  }
+
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+
 export { CATEGORY_ORDER };
