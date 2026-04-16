@@ -12,7 +12,9 @@ Persönliche Rezept- und Meal-Planning-App für iOS und Android, entwickelt mit 
 - Rezepte erstellen, bearbeiten und löschen
 - Kategorien als Tags (Pasta, Reis, Curry, Suppe, Fisch, Fleisch, Vegetarisch, Salat, Eintopf)
 - **Import von URL**: Rezept direkt aus Chefkoch & Co. importieren (JSON-LD-Parser, kein Server nötig)
+- **Clipboard-Erkennung**: URL im Browser kopieren → Kochwelt öffnen → Import wird automatisch angeboten
 - **Import aus JSON-Datei**: Eigene Rezeptdaten via Datei-Picker einlesen
+- **Android Share Sheet**: Kochwelt erscheint nativ beim Teilen aus Chrome/Firefox
 - **Koch-Zähler**: Badge "X× in 4 Wochen" zeigt, wie oft ein Rezept zuletzt eingeplant war
 - **Persönliche Bewertung**: 1–5 Sterne pro Rezept, editierbar via Bottom-Sheet-Modal
 - **Live-Portionsskalierung**: +/− Buttons in der Detailansicht skalieren alle Zutatenmengen live
@@ -34,7 +36,7 @@ Persönliche Rezept- und Meal-Planning-App für iOS und Android, entwickelt mit 
 - Checkboxen zum Abhaken mit persistentem Stand (bleibt nach Tab-Wechsel erhalten)
 - Fortschrittsbalken, "Alle abhaken"-Button, Auswahl zurücksetzen
 - Kategorien ein-/ausklappbar
-- Einkaufsliste als Text teilen (iOS/Android Share-Sheet)
+- **Teilen als Text** (WhatsApp, Mail, AirDrop) oder **als .ics-Datei** (iOS Reminders via AirDrop)
 
 ### Startseite
 - Begrüßung je Tageszeit
@@ -165,8 +167,12 @@ Record<"YYYY-MM-DD", {
 - ✅ Foto pro Rezept (Kamera / Galerie)
 - ✅ Live-Portionsskalierung in Detailansicht
 - ✅ Einstellungen-Tab (Nährwertziele, Export/Import)
+- ✅ Einkaufsliste als .ics an iOS Reminders teilen (AirDrop)
+- ✅ Rezept-Import via Clipboard-Erkennung (kein Setup nötig)
+- ✅ Android: Kochwelt im nativen Share Sheet (Intent Filter)
+- ⏳ iOS Share Extension (nativer Safari-Share-Sheet-Eintrag)
 - ⏳ Nährwert-Statistiken (wöchentliche Charts)
-- ⏳ Push-Erinnerungen (Einkaufen, Kochen)
+- ⏳ Push-Erinnerungen (Kochen-Erinnerung)
 
 ### Phase 3 (langfristig)
 - Cloud-Sync (Supabase)

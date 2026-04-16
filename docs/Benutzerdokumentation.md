@@ -1,6 +1,6 @@
 # Kochwelt — Benutzerdokumentation
 
-**Version 1.0 · Stand April 2026**
+**Version 1.1 · Stand April 2026**
 
 ---
 
@@ -12,7 +12,8 @@
    - 3.1 [Rezeptliste](#31-rezeptliste)
    - 3.2 [Rezept-Detailansicht](#32-rezept-detailansicht)
    - 3.3 [Rezept erstellen](#33-rezept-erstellen)
-   - 3.4 [Rezept bearbeiten und löschen](#34-rezept-bearbeiten-und-löschen)
+   - 3.4 [Rezept aus dem Browser importieren](#34-rezept-aus-dem-browser-importieren)
+   - 3.5 [Rezept bearbeiten und löschen](#35-rezept-bearbeiten-und-löschen)
 4. [Wochenplaner](#4-wochenplaner)
 5. [Einkaufsliste](#5-einkaufsliste)
 6. [Einstellungen](#6-einstellungen)
@@ -119,65 +120,28 @@ Das Rezeptfoto wird oben als breites Bild angezeigt. Fehlt ein Foto, wird ein Pl
 
 #### Nährwerte
 Sofern vorhanden, zeigt eine orangefarbene Box die Nährwerte **pro Portion** (nach aktueller Portionsskalierung):
-- Kalorien (kcal)
-- Eiweiß (g)
-- Fett (g)
-- Kohlenhydrate (g)
+- Kalorien (kcal), Eiweiß (g), Fett (g), Kohlenhydrate (g)
 
 #### Quelle
-Wenn eine URL hinterlegt ist:
 - **YouTube-Links** erscheinen als roter „Zum Video"-Button.
 - **Andere URLs** erscheinen als grauer Button.
 - **Text** (z. B. Buchquelle) wird mit einem Buch-Icon dargestellt.
 
 #### Zutaten
-Die Zutatenliste ist nach Einkaufskategorie geordnet. Jede Zeile zeigt Menge und Zutat. Die Mengen skalieren live mit den eingestellten Portionen.
-
-Einkaufskategorien und ihre Icons:
-- Gemüse & Obst (Blatt)
-- Fleisch & Fisch (Fisch)
-- Mopro / Milchprodukte (Ei)
-- Trockensortiment (Korn)
-- Tiefkühl (Schneeflocke)
-- Vorrat (Dose)
-- Sonstiges (Korb)
-
-#### Zubereitung
-Der Zubereitungstext steht als freier Text unterhalb der Zutatenliste.
+Die Zutatenliste ist nach Einkaufskategorie geordnet. Die Mengen skalieren live mit den eingestellten Portionen.
 
 #### „Zum Planer"-Button
-Am unteren Bildschirmrand befindet sich ein orangefarbener Floating-Button. Tippe darauf, um das Rezept direkt in den Wochenplaner einzutragen.
-
-Im erscheinenden Modal wählst du:
-1. **Woche** — diese oder nächste Woche
-2. **Wochentag** — Montag bis Sonntag
-3. **Mahlzeit** — Mittag oder Abend
-4. **Portionen** — 1–20
-
-Nach dem Tippen auf „Hinzufügen" erscheint kurz ein grüner Haken als Bestätigung.
+Am unteren Bildschirmrand. Tippe darauf, um das Rezept in den Wochenplaner einzutragen (Woche, Tag, Mittag/Abend, Portionen auswählen).
 
 #### Persönliche Bewertung (Rating)
-Tippe auf die Sterne im Kopfbereich. Ein Modal öffnet sich mit 5 großen Sternen zum Antippen. Die Bewertung wird sofort gespeichert.
-
-Um die Bewertung zu entfernen: Tippe erneut denselben Stern an — die Bewertung wird gelöscht.
+Tippe auf die Sterne im Kopfbereich. Ein Modal öffnet sich mit 5 großen Sternen. Denselben Stern nochmal antippen entfernt die Bewertung.
 
 ### 3.3 Rezept erstellen
 
 Tippe in der Rezeptliste auf **+** oben rechts.
 
-#### Import-Möglichkeiten
-
-**Aus URL importieren** (nur beim Erstellen)
-Füge die URL einer Rezeptwebseite (z. B. Chefkoch.de) ein. Die App liest die strukturierten Rezeptdaten automatisch aus und befüllt alle Felder. Anschließend kannst du alles noch bearbeiten.
-
-**Aus JSON importieren**
-Lade eine zuvor exportierte JSON-Datei. Die Felder werden vorausgefüllt.
-
 #### Pflichtfeld: Titel
 Alle anderen Felder sind optional.
-
-#### Kategorien
-Wähle eine oder mehrere Kategorien durch Antippen der Chips. Aktive Kategorien sind orange hervorgehoben.
 
 #### Zutaten
 Gib jede Zutat in eine eigene Zeile ein:
@@ -186,26 +150,40 @@ Gib jede Zutat in eine eigene Zeile ein:
 3 Eier
 1 TL Salz
 ```
-Die App erkennt Menge und Einheit automatisch und weist jeder Zutat eine Einkaufskategorie zu. Diese kannst du später beim Bearbeiten anpassen.
-
-Unterstützte Bruchzeichen: ½ ¼ ¾ ⅓ ⅔
+Die App erkennt Menge und Einheit automatisch. Unterstützte Bruchzeichen: ½ ¼ ¾ ⅓ ⅔
 
 #### Nährwerte
-Die Nährwerte (kcal, Eiweiß, Fett, Kohlenhydrate) beziehen sich auf die **Gesamtmenge** aller Portionen. Die App errechnet daraus automatisch die Werte pro Portion.
+Beziehen sich auf die **Gesamtmenge** aller Portionen. Die App errechnet daraus die Werte pro Portion.
 
 #### Foto
-Tippe auf den Fotobereich, um ein Foto aufzunehmen oder aus der Galerie auszuwählen. Das Foto wird auf 800 Pixel Breite komprimiert und lokal gespeichert.
+Tippe auf den Fotobereich für Kamera oder Galerie. Das Foto wird komprimiert und lokal gespeichert.
 
-#### Speichern
-Tippe auf **Speichern**. Du gelangst zurück zur Rezeptliste.
+### 3.4 Rezept aus dem Browser importieren
 
-### 3.4 Rezept bearbeiten und löschen
+Kochwelt kann Rezeptdaten automatisch von Webseiten (z. B. Chefkoch.de) einlesen — vorausgesetzt, die Seite stellt strukturierte Rezeptdaten bereit (Standard: JSON-LD).
+
+#### Empfohlener Weg: URL kopieren
+
+1. Öffne das gewünschte Rezept im Browser.
+2. Kopiere die Adresse (Adressleiste antippen → „Kopieren").
+3. Öffne Kochwelt → tippe auf **+ Neues Rezept**.
+4. Die App erkennt die URL in der Zwischenablage automatisch und fragt: „Rezept-URL erkannt — importieren?"
+5. Tippe auf **Importieren** — alle verfügbaren Felder werden befüllt.
+6. Prüfe und ergänze die Daten nach Bedarf, dann **Speichern**.
+
+#### Manuell: Von URL importieren
+Im Formular „Neues Rezept" gibt es auch einen **„Von URL"**-Button, über den du eine URL direkt eingeben kannst.
+
+#### Android: Direkt aus dem Browser teilen
+Auf Android erscheint Kochwelt im System-Share-Sheet. Tippe im Browser auf **Teilen → Kochwelt** — die App öffnet sich und importiert das Rezept sofort.
+
+> **Hinweis:** Nicht alle Webseiten stellen strukturierte Rezeptdaten bereit. Wenn der Import keine Daten findet, erscheint eine Fehlermeldung — du kannst das Rezept dann manuell eingeben.
+
+### 3.5 Rezept bearbeiten und löschen
 
 Öffne das gewünschte Rezept und tippe oben rechts auf:
 - **Stift-Symbol** → Rezept bearbeiten
 - **Papierkorb-Symbol** → Rezept löschen (mit Bestätigungsdialog)
-
-Das Bearbeiten-Formular ist identisch mit dem Erstellen-Formular, alle Felder sind vorausgefüllt.
 
 ---
 
@@ -214,36 +192,24 @@ Das Bearbeiten-Formular ist identisch mit dem Erstellen-Formular, alle Felder si
 Der Planer zeigt dir eine Wochensicht (Montag–Sonntag) mit je zwei Mahlzeit-Slots pro Tag.
 
 ### Navigation
-- Pfeiltasten links/rechts wechseln zur vorherigen oder nächsten Woche.
-- Der aktuelle Wochentag ist farbig hervorgehoben.
+Pfeiltasten links/rechts wechseln zur vorherigen oder nächsten Woche. Der aktuelle Wochentag ist farbig hervorgehoben.
 
 ### Mahlzeit-Slots
-Jeder Tag hat zwei Slots:
-- **Mittag** (Sonnen-Icon)
-- **Abend** (Mond-Icon)
+Jeder Tag hat zwei Slots: **Mittag** (Sonnen-Icon) und **Abend** (Mond-Icon).
 
 #### Rezept einplanen
-Tippe in einem leeren Slot auf **Rezept** → der Rezept-Picker öffnet sich als Modal. Wähle ein Rezept aus der Liste und stelle die gewünschte Portionszahl ein. Tippe auf **Wählen**, um die Auswahl zu bestätigen.
+Tippe auf **Rezept** → Rezept-Picker öffnet sich als Modal. Rezept auswählen, Portionszahl einstellen, **Wählen** tippen.
 
 #### Kalte Küche eintragen
-Tippe auf **Kalte Küche**, um eine Mahlzeit ohne Rezept einzutragen (z. B. Brot, Salat, Rest). Ein Modal öffnet sich:
-- Titel der Mahlzeit (optional)
-- Nährwerte: kcal, Eiweiß, Fett, Kohlenhydrate
-
-Standardwerte sind vorausgefüllt (Mittag: 550 kcal / 25 g Eiweiß; Abend: 400 kcal / 20 g Eiweiß).
+Tippe auf **Kalte Küche** für eine Mahlzeit ohne Rezept (z. B. Brot, Salat, Rest). Titel und Nährwerte können manuell eingetragen werden. Standardwerte: Mittag 550 kcal / 25 g Eiweiß, Abend 400 kcal / 20 g Eiweiß.
 
 #### Mahlzeit entfernen
 Tippe auf das **×**-Symbol in der Ecke einer geplanten Mahlzeit.
 
 ### Nährwert-Fortschrittsbalken
-Unter jedem Tag werden die Tages-Nährwerte als Fortschrittsbalken angezeigt (Kalorien, Eiweiß, Kohlenhydrate, Fett). Die Balken vergleichen die Summe aller geplanten Mahlzeiten mit deinen täglichen Zielen.
+Unter jedem Tag werden Kalorien, Eiweiß, Kohlenhydrate und Fett als Fortschrittsbalken angezeigt, verglichen mit deinen Tageszielen (einstellbar unter Einstellungen).
 
-**Farbcode:**
-- Grün: mindestens 75 % des Tagesziels erreicht
-- Orange: knapp unter oder leicht über dem Ziel
-- Rot: deutlich über dem Ziel (> 105 %)
-
-Die Tagesziele kannst du in den **Einstellungen** anpassen.
+**Farbcode:** Grün ≥ 75 % · Orange knapp unter/über dem Ziel · Rot > 105 %
 
 ---
 
@@ -252,99 +218,63 @@ Die Tagesziele kannst du in den **Einstellungen** anpassen.
 Die Einkaufsliste wird automatisch aus dem Wochenplan generiert.
 
 ### Tagesauswahl
-Oben im Tab sind alle Tage aufgelistet, für die Mahlzeiten geplant sind. Aktiviere oder deaktiviere einzelne Tage mit einem Tipp, um die Liste auf den gewünschten Einkaufszeitraum zu beschränken (z. B. nur Mo–Mi für den ersten Einkauf der Woche).
+Aktiviere oder deaktiviere einzelne Tage, um die Liste auf den gewünschten Einkaufszeitraum zu beschränken (z. B. nur Mo–Mi für den ersten Einkauf der Woche).
 
 ### Darstellungsmodi
-
-**Vorbereitung** — Alle Zutaten werden angezeigt.
-
-**Einkauf** — Artikel, die als „vorhanden" markiert wurden, werden ausgeblendet. Ideal für den Gang durch den Supermarkt.
-
-### Kategorien
-Die Liste ist nach Einkaufskategorien gruppiert (Gemüse & Obst, Fleisch & Fisch, Mopro, Trockensortiment, Tiefkühl, Vorrat, Sonstiges). Kategorien können durch Antippen des Kopfbereichs ein- und ausgeklappt werden.
+- **Vorbereitung** — Alle Zutaten werden angezeigt.
+- **Einkauf** — Als „vorhanden" markierte Artikel werden ausgeblendet.
 
 ### Mengen-Zusammenfassung
-Gleiche Zutaten aus mehreren Rezepten werden automatisch zusammengefasst. Beispiel: 400 g Tomaten (Montag) + 200 g Tomaten (Mittwoch) erscheinen als „600 g (400 g + 200 g) Tomaten".
+Gleiche Zutaten werden automatisch summiert: „600 g (400 g + 200 g) Tomaten".
 
 ### Artikel verwalten
+- **Checkbox** → Artikel als „gekauft" abhaken
+- **Haus-Icon** → Artikel als „vorhanden" markieren (grün, im Einkauf-Modus ausgeblendet)
 
-| Aktion | Beschreibung |
-|--------|-------------|
-| Checkbox antippen | Artikel als „gekauft" abhaken (wird durchgestrichen) |
-| Haus-Icon antippen | Artikel als „vorhanden" markieren (grün hervorgehoben, im Einkauf-Modus ausgeblendet) |
+### Einkaufsliste teilen
+Der **„Teilen"**-Button öffnet ein Auswahlmenü mit zwei Optionen:
 
-### Aktionsleiste
-- **Fortschrittsbalken** oben zeigt, wie viele Artikel bereits abgehakt wurden.
-- **„Alle abhaken"** — markiert alle noch offenen Artikel als gekauft.
-- **Teilen-Button** — öffnet das iOS/Android-Teilen-Sheet mit der formatierten Einkaufsliste als Text.
-- **Zurücksetzen** — setzt alle Checkmarks zurück oder löscht alle „vorhanden"-Markierungen.
+**Als Text** — Sendet die Einkaufsliste als formatierten Text (WhatsApp, iMessage, Mail, AirDrop als Textdatei).
+
+**Als Erinnerung** — Erstellt eine `.ics`-Datei, bei der jeder Artikel eine eigene abhakbare Aufgabe wird. Per AirDrop an ein anderes iPhone senden → iOS öffnet sie direkt in der Reminders-App.
 
 ---
 
 ## 6. Einstellungen
 
 ### Erinnerungen
-Stelle ein, ob und wann du an die Wochenplanung erinnert werden möchtest:
-
-- **Nie** — keine Benachrichtigungen
-- **Wöchentlich** — einmal pro Woche, an dem von dir gewählten Wochentag und zur eingestellten Uhrzeit
-- **Täglich** — jeden Tag zur eingestellten Uhrzeit
-
-Die Uhrzeit stellst du mit den Pfeilchens ▲▼ ein.
-
-Beim erstmaligen Aktivieren fragt die App um Erlaubnis für Benachrichtigungen.
+Wähle zwischen Nie / Wöchentlich / Täglich. Bei wöchentlich kann der Wochentag gewählt werden. Uhrzeit mit den Pfeilchen einstellen.
 
 ### Nährwertziele
-Trage deine persönlichen Tagesziele ein:
+Tägliche Ziele für Kalorien, Eiweiß, Kohlenhydrate, Fett. Die Mahlzeiten-Verteilung (% pro Mahlzeit) muss zusammen 100 % ergeben.
 
-| Feld | Standard |
-|------|---------|
-| Kalorien | 2.000 kcal |
-| Eiweiß | 75 g |
-| Kohlenhydrate | 250 g |
-| Fett | 70 g |
-
-**Mahlzeiten-Aufteilung** — Die Tagesziele können auf die Mahlzeiten verteilt werden (in Prozent). Die vier Werte müssen zusammen 100 % ergeben. Sind sie ungleich 100 %, erscheint ein Warnhinweis und das Speichern ist nicht möglich.
-
-Tippe auf **Ziele speichern**, um die Eingaben zu übernehmen. Der Button erscheint nur, wenn Änderungen vorliegen.
+### Rezept aus Browser importieren
+Erklärt den empfohlenen Import-Weg (URL kopieren → + Neues Rezept → automatische Erkennung).
 
 ---
 
 ## 7. Export & Import
 
-Der Bereich **Export / Import** ist über das Werkzeug-Icon in der Rezeptliste (oben rechts) erreichbar.
+Erreichbar über das Werkzeug-Icon in der Rezeptliste (oben rechts).
 
-### Rezepte exportieren
+### Exportieren
+Erstellt `kochwelt-rezepte.json` mit allen Rezepten (ohne Fotos). iOS/Android: System-Teilen-Dialog. Web: automatischer Download.
 
-Tippe auf **Exportieren**. Die App erstellt eine Datei `kochwelt-rezepte.json` mit allen Rezepten (ohne Fotos):
-- Auf **iOS/Android**: der System-Teilen-Dialog öffnet sich — speichere die Datei z. B. in den Dateien oder teile sie per AirDrop.
-- Im **Web-Browser**: die Datei wird automatisch heruntergeladen.
+### Importieren
+JSON-Datei auswählen → App gleicht nach ID ab: neue Rezepte werden hinzugefügt, bestehende aktualisiert. Vorhandene Fotos bleiben erhalten.
 
-Die JSON-Datei enthält alle Rezepte in einem lesbaren Format und kann in einem Texteditor bearbeitet werden.
-
-### Rezepte importieren
-
-Tippe auf **Importieren** und wähle eine JSON-Datei aus. Die App gleicht die Rezepte anhand ihrer IDs ab:
-- **Neue IDs** werden hinzugefügt.
-- **Bekannte IDs** werden aktualisiert (bestehende Fotos bleiben erhalten).
-- Fehler (z. B. fehlender Titel) werden protokolliert und übersprungen.
-
-Nach dem Import siehst du eine Zusammenfassung: wie viele Rezepte hinzugefügt, aktualisiert oder übersprungen wurden.
-
-### Anwendungsfall: Rezepte sichern und wiederherstellen
-
-1. Exportiere alle Rezepte als JSON.
-2. Speichere die Datei sicher (z. B. iCloud, E-Mail).
-3. Nach einer Neuinstallation: Import der Datei → alle Rezepte sind wiederhergestellt.
+### Sicherung und Wiederherstellung
+1. Exportieren → Datei sicher ablegen (iCloud, E-Mail).
+2. Nach Neuinstallation: Importieren → alle Rezepte wiederhergestellt.
 
 ---
 
 ## 8. Datenhaltung & Datenschutz
 
 - Alle Daten werden **ausschließlich lokal** auf deinem Gerät gespeichert.
-- Es gibt **keine Cloud-Anbindung**, kein Nutzerkonto, keine Registrierung.
-- Rezeptfotos werden im lokalen Dokumente-Ordner der App abgelegt.
-- Beim Löschen der App werden alle Daten unwiderruflich gelöscht. Mache vorher einen Export.
+- Keine Cloud-Anbindung, kein Nutzerkonto, keine Registrierung.
+- Rezeptfotos liegen im lokalen Dokumente-Ordner der App.
+- Beim Löschen der App werden alle Daten unwiderruflich gelöscht — vorher exportieren.
 
 ---
 
@@ -354,19 +284,19 @@ Nach dem Import siehst du eine Zusammenfassung: wie viele Rezepte hinzugefügt, 
 Deinstalliere die App. Beim erneuten Installieren startet die App mit den 40 vorinstallierten Basis-Rezepten.
 
 **Kann ich Rezepte zwischen zwei Geräten teilen?**
-Ja, über Export und Import. Exportiere auf Gerät A, übertrage die JSON-Datei (z. B. per AirDrop oder E-Mail) und importiere auf Gerät B.
+Ja, über Export und Import. Exportieren → Datei per AirDrop oder E-Mail übertragen → auf dem anderen Gerät importieren.
 
 **Meine Portionsskalierung in der Detailansicht wirkt sich nicht auf den Planer aus — warum?**
-Die Skalierung in der Detailansicht dient nur der Vorschau. Wenn du ein Rezept in den Planer hinzufügst, wählst du die Portionszahl dort separat im Modal.
+Die Skalierung in der Detailansicht dient nur der Vorschau. Die Portionszahl für den Planer wird im Hinzufügen-Modal separat eingestellt.
 
-**Ich habe versehentlich ein Rezept gelöscht — kann ich es wiederherstellen?**
-Nein, gelöschte Rezepte können nicht wiederhergestellt werden. Bei den 40 Basis-Rezepten: Setze die App zurück (Deinstallation und Neuinstallation), um sie wiederherzustellen — dabei gehen aber alle eigenen Rezepte verloren.
+**Kochwelt erkennt keine URL in meiner Zwischenablage — warum?**
+iOS fragt beim ersten Zugriff nach Erlaubnis für den Clipboard-Zugriff. Falls du „Nicht erlauben" gewählt hast, funktioniert die automatische Erkennung nicht. Die URL kann trotzdem manuell über den „Von URL"-Button eingegeben werden.
 
 **Warum erscheinen manche Zutaten ohne Menge in der Einkaufsliste?**
-Zutaten ohne Mengenangabe (z. B. „Salz") werden ohne Menge übernommen. Beim Import aus einer URL fehlen manchmal Mengenangaben, die du dann im Bearbeitungsformular ergänzen kannst.
+Zutaten ohne Mengenangabe (z. B. „Salz") werden ohne Menge übernommen. Beim URL-Import fehlen manchmal Mengenangaben — diese kannst du im Bearbeitungsformular ergänzen.
 
-**Die Nährwert-Fortschrittsbalken im Planer zeigen keine Werte — warum?**
-Stell sicher, dass du unter **Einstellungen → Nährwertziele** Werte größer als 0 eingetragen und gespeichert hast. Nur Rezepte mit hinterlegten Nährwerten fließen in die Berechnung ein.
+**Ich habe versehentlich ein Basis-Rezept gelöscht — kann ich es wiederherstellen?**
+Nein, ohne Datensicherung nicht. Vollständige Wiederherstellung aller Basis-Rezepte nur durch Deinstallation und Neuinstallation — dabei gehen eigene Rezepte verloren (vorher exportieren).
 
 **Kann ich ein Rezept mehrfach pro Tag einplanen?**
-Pro Tag und Slot (Mittag/Abend) kann jeweils genau ein Rezept eingeplant sein. Für mehrere Rezepte an einem Tag nutze beide Slots.
+Pro Tag und Slot (Mittag/Abend) jeweils ein Rezept. Für mehrere Rezepte an einem Tag beide Slots nutzen.
