@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Share, Platform,
+  ActionSheetIOS, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -170,12 +171,12 @@ export default function ShoppingScreen() {
     });
   }
 
-  async function handleShare() {
+  async function shareAsText() {
     const text = shoppingListToText(list);
     await Share.share({ message: text, title: 'Einkaufsliste' });
   }
 
-  async function handleShareICS() {
+  async function shareAsReminder() {
     if (Platform.OS === 'web') {
       const ics = shoppingListToICS(list);
       const blob = new Blob([ics], { type: 'text/calendar' });
@@ -189,6 +190,33 @@ export default function ShoppingScreen() {
     const path = FileSystem.documentDirectory + 'einkaufsliste.ics';
     await FileSystem.writeAsStringAsync(path, ics, { encoding: FileSystem.EncodingType.UTF8 });
     await Sharing.shareAsync(path, { mimeType: 'text/calendar', UTI: 'public.calendar' });
+  }
+
+  function handleShare() {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: 'Einkaufsliste teilen',
+          message: 'Wähle ein Format',
+          options: [
+            'Abbrechen',
+            'Als Text (WhatsApp, iMessage, Mail …)',
+            'Als Erinnerung (Reminders via AirDrop)',
+          ],
+          cancelButtonIndex: 0,
+        },
+        (idx) => {
+          if (idx === 1) shareAsText();
+          if (idx === 2) shareAsReminder();
+        }
+      );
+    } else {
+      Alert.alert('Einkaufsliste teilen', 'Wähle ein Format', [
+        { text: 'Als Text teilen', onPress: shareAsText },
+        { text: 'Als Erinnerung (ICS)', onPress: shareAsReminder },
+        { text: 'Abbrechen', style: 'cancel' },
+      ]);
+    }
   }
 
   const categories = CATEGORY_ORDER.filter(c => list[c]?.length);
@@ -240,9 +268,6 @@ export default function ShoppingScreen() {
               <Ionicons name="checkmark-done-outline" size={18} color="#f97316" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={handleShareICS} style={s.iconBtn}>
-            <Ionicons name="alarm-outline" size={18} color="#f97316" />
-          </TouchableOpacity>
           <TouchableOpacity onPress={handleShare} style={s.shareBtn}>
             <Ionicons name="share-outline" size={18} color="#ffffff" />
             <Text style={s.shareBtnText}>Teilen</Text>
