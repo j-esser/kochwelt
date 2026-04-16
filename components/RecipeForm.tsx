@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, ScrollView, TouchableOpacity, Alert,
-  ActivityIndicator, Image,
+  ActivityIndicator, Image, Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter, Stack } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -129,6 +130,28 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importUrl]);
+
+  // Clipboard-Erkennung: URL beim Öffnen anbieten (nur bei neuem Rezept, nicht Web)
+  useEffect(() => {
+    if (initial || importUrl || Platform.OS === 'web') return;
+    (async () => {
+      try {
+        const text = await Clipboard.getStringAsync();
+        if (text && /^https?:\/\/.+\..+/i.test(text.trim())) {
+          const url = text.trim();
+          Alert.alert(
+            'Rezept-URL erkannt',
+            `Soll das Rezept von dieser Seite importiert werden?\n\n${url}`,
+            [
+              { text: 'Abbrechen', style: 'cancel' },
+              { text: 'Importieren', onPress: () => handleUrlImport(url) },
+            ]
+          );
+        }
+      } catch { /* Clipboard-Zugriff nicht verfügbar */ }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function applyImport(data: Partial<{
     title: string; description: string; cookTime: number; portions: number;

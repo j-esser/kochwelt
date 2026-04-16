@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Alert, Platform, Switch, Clipboard,
+  StyleSheet, Alert, Platform, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
 import {
   getSettings, saveSettings, scheduleReminder, cancelReminder,
   requestNotificationPermission, WEEKDAY_LABELS,
@@ -117,64 +116,31 @@ export default function EinstellungenScreen() {
 
         {/* ── Browser-Import ── */}
         <SectionHeader title="Rezept aus Browser importieren" />
-        {Platform.OS === 'ios' ? (
-          <View style={s.importCard}>
-            <View style={s.importStep}>
-              <View style={s.stepBadge}><Text style={s.stepBadgeText}>1</Text></View>
-              <Text style={s.stepText}>
-                Öffne die <Text style={s.bold}>Kurzbefehl-App</Text> (Shortcuts) auf deinem iPhone und tippe auf <Text style={s.bold}>+</Text>.
-              </Text>
-            </View>
-            <View style={s.importStep}>
-              <View style={s.stepBadge}><Text style={s.stepBadgeText}>2</Text></View>
-              <Text style={s.stepText}>
-                Tippe auf <Text style={s.bold}>Aktion hinzufügen</Text> → suche nach <Text style={s.bold}>„URL öffnen"</Text> → füge die Aktion hinzu.
-              </Text>
-            </View>
-            <View style={s.importStep}>
-              <View style={s.stepBadge}><Text style={s.stepBadgeText}>3</Text></View>
-              <View style={{ flex: 1 }}>
+        <View style={s.importCard}>
+          {Platform.OS === 'ios' ? (
+            <>
+              <View style={s.importStep}>
+                <Ionicons name="clipboard-outline" size={18} color="#f97316" style={{ marginTop: 1 }} />
                 <Text style={s.stepText}>
-                  Tippe in das URL-Feld und trage folgende URL ein:
-                </Text>
-                <TouchableOpacity
-                  style={s.urlBox}
-                  onPress={() => {
-                    Clipboard.setString('kochwelt://recipe/new?importUrl=');
-                    Alert.alert('Kopiert', 'URL in die Zwischenablage kopiert.\nFüge sie in das Feld „URL" im Kurzbefehl ein und hänge dann die Variable „Eingabe" dahinter.');
-                  }}
-                >
-                  <Text style={s.urlText} selectable>{'kochwelt://recipe/new?importUrl='}</Text>
-                  <Ionicons name="copy-outline" size={14} color="#f97316" style={{ marginLeft: 6 }} />
-                </TouchableOpacity>
-                <Text style={[s.stepText, { marginTop: 4 }]}>
-                  Danach die Variable <Text style={s.bold}>„Eingabe"</Text> (oder „Kurzbefehl-Eingabe") direkt dahinter einfügen — ohne Leerzeichen.
+                  Rezept-URL in Safari <Text style={s.bold}>kopieren</Text> → Kochwelt öffnen → <Text style={s.bold}>+ Neues Rezept</Text> — die App erkennt die URL automatisch und bietet den Import an.
                 </Text>
               </View>
-            </View>
+              <View style={[s.importStep, { borderTopWidth: 1, borderTopColor: '#fed7aa', paddingTop: 10 }]}>
+                <Ionicons name="information-circle-outline" size={16} color="#a8a29e" style={{ marginTop: 1 }} />
+                <Text style={[s.stepText, { color: '#a8a29e', fontSize: 12 }]}>
+                  Für einen direkten „Teilen"-Button in Safari wäre eine Share Extension nötig — das ist in einer zukünftigen Version geplant.
+                </Text>
+              </View>
+            </>
+          ) : (
             <View style={s.importStep}>
-              <View style={s.stepBadge}><Text style={s.stepBadgeText}>4</Text></View>
-              <Text style={s.stepText}>
-                Kurzbefehl benennen (z. B. <Text style={s.bold}>„In Kochwelt"</Text>), dann speichern. Unter <Text style={s.bold}>Details</Text> → <Text style={s.bold}>„Im Share-Sheet anzeigen"</Text> aktivieren.
-              </Text>
-            </View>
-            <View style={[s.importStep, { borderTopWidth: 1, borderTopColor: '#fed7aa', marginTop: 8, paddingTop: 12 }]}>
-              <Ionicons name="checkmark-circle-outline" size={18} color="#22c55e" />
+              <Ionicons name="checkmark-circle-outline" size={18} color="#22c55e" style={{ marginTop: 1 }} />
               <Text style={[s.stepText, { color: '#16a34a' }]}>
-                Ab jetzt: Im Safari auf <Text style={s.bold}>Teilen → In Kochwelt</Text> tippen — die App öffnet sich und importiert das Rezept automatisch.
+                Rezept in Chrome oder Firefox aufrufen → <Text style={s.bold}>Teilen → Kochwelt</Text> — fertig.
               </Text>
             </View>
-          </View>
-        ) : (
-          <View style={s.importCard}>
-            <View style={s.importStep}>
-              <Ionicons name="checkmark-circle-outline" size={18} color="#22c55e" />
-              <Text style={[s.stepText, { color: '#16a34a' }]}>
-                Auf Android ist Kochwelt bereits im Teilen-Menü verfügbar. Öffne ein Rezept im Browser, tippe auf <Text style={s.bold}>Teilen → Kochwelt</Text> — fertig.
-              </Text>
-            </View>
-          </View>
-        )}
+          )}
+        </View>
 
         {/* ── Erinnerungen ── */}
         <SectionHeader title="Erinnerungen" />
@@ -388,13 +354,6 @@ const s = StyleSheet.create({
   stepBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   stepText: { flex: 1, fontSize: 14, color: '#57534e', lineHeight: 20 },
   bold: { fontWeight: '700', color: '#1c1917' },
-  urlBox: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff',
-    borderRadius: 8, borderWidth: 1, borderColor: '#fed7aa',
-    paddingHorizontal: 10, paddingVertical: 7, marginTop: 6,
-  },
-  urlText: { flex: 1, fontSize: 12, color: '#c2410c', fontFamily: 'monospace' },
-
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#f97316', borderRadius: 16, paddingVertical: 16, marginTop: 8,
