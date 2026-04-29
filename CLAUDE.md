@@ -140,6 +140,25 @@ Beim App-Start (`app/_layout.tsx`) werden drei Funktionen sequenziell aufgerufen
 - **Android**: Intent Filter in `app.json` für `SEND / text/plain` → Kochwelt erscheint nativ im Android Share Sheet
 - **iOS**: Kein nativer Share-Sheet-Eintrag ohne Share Extension. Clipboard-Flow ist der empfohlene Weg. Share Extension ist für eine spätere Version geplant.
 
+### Vorlage-/Import-Modal — `components/RecipeForm.tsx`
+Klick auf „JSON / Vorlage" im Import-Bereich öffnet ein Bottom-Sheet-Modal mit drei Optionen:
+- **Beispiel-Vorlage**: Füllt das Formular mit Dummy-Daten (Titel, Zutaten, Zubereitung, Nährwerte, Kategorie). Konstant `RECIPE_TEMPLATE` in `RecipeForm.tsx`.
+- **Aus vorhandenem Rezept**: Zeigt eine durchsuchbare Liste aller Rezepte (`getAllRecipes()`). Bei Klick werden alle Felder vorbelegt (Titel mit „(Kopie)"-Suffix), ohne `id`/`photo`/`rating` — das wird beim Speichern ein neues Rezept.
+- **JSON-Datei importieren**: Bestehender DocumentPicker-Flow (Web-App-Export-JSON).
+
+State: `showTemplateModal`, `templateMode: 'choose'|'pickRecipe'`, `allRecipes`, `recipeSearch`. `applyImport()` setzt jetzt auch `protein/fat/carbs`.
+
+### Tastatur-Behandlung — `react-native-keyboard-aware-scroll-view`
+- Wird in `RecipeForm.tsx` und `app/(tabs)/einstellungen.tsx` verwendet (`KeyboardAwareScrollView` statt `ScrollView`).
+- Bei multiline-`TextInput`s (Zutaten, Zubereitung) zusätzlich `onContentSizeChange` + `onFocus` mit `scrollToFocusedInput(node, 120, 0)` über Refs — nötig weil die Lib nicht von alleine auf wachsenden Cursor reagiert.
+- Snack-/Kalte-Küche-Modal in `planer.tsx` nutzt `KeyboardAvoidingView` mit `behavior='padding'`, `justifyContent: 'flex-end'`, `pointerEvents: 'box-none'` — Backdrop ist `StyleSheet.absoluteFillObject`.
+
+### Tagesziel-Berechnung — `app/(tabs)/planer.tsx::calcDayNutrition`
+**Konvention**: Pro geplanter Mahlzeit zählt **immer 1 Portion** zum Tagesziel — `factor = 1 / (recipe.portions || 1)`. `meal.portions` (Picker) ist nur für die Einkaufsliste relevant (= „wie viele Portionen kochen"). Manuelle Einträge (Snack/Kalte Küche): `manualNutrition` wird direkt addiert; Werte gelten als „pro Portion" — Hinweis im Modal.
+
+### Mahlzeit-Typ-Wähler im Snack-/Kalte-Küche-Modal — `planer.tsx`
+Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/KH aus `getMealDefaults(goals, type)` (in `nutritionGoals.ts`) vorbelegt — Tagesziele × konfiguriertem Anteil (`splits.frueh|mittag|abend|sonst`). Default-Auswahl je nach Einstiegspunkt: Mittag-Slot → 'mittag', Abend-Slot → 'abend', „Snack hinzufügen" → 'sonst'.
+
 ### Foto-Handling
 - Lokale Fotos: `FileSystem.documentDirectory + 'recipe_photos/' + recipeId + '.jpg'`
 - Baseline-Fotos: https-URLs aus `BASELINE_PHOTO_MAP`

@@ -153,7 +153,7 @@ Gib jede Zutat in eine eigene Zeile ein:
 Die App erkennt Menge und Einheit automatisch. Unterstützte Bruchzeichen: ½ ¼ ¾ ⅓ ⅔
 
 #### Nährwerte
-Beziehen sich auf die **Gesamtmenge** aller Portionen. Die App errechnet daraus die Werte pro Portion.
+Beziehen sich auf die **Gesamtmenge** aller Portionen. Die App errechnet daraus die Werte pro Portion. Im Wochenplaner zählt **immer 1 Portion** pro geplanter Mahlzeit zum Tagesziel — unabhängig davon, wie viele Portionen du im Picker auswählst (das ist nur für die Einkaufsliste relevant).
 
 #### Foto
 Tippe auf den Fotobereich für Kamera oder Galerie. Das Foto wird komprimiert und lokal gespeichert.
@@ -173,6 +173,12 @@ Kochwelt kann Rezeptdaten automatisch von Webseiten (z. B. Chefkoch.de) einlesen
 
 #### Manuell: Von URL importieren
 Im Formular „Neues Rezept" gibt es auch einen **„Von URL"**-Button, über den du eine URL direkt eingeben kannst.
+
+#### Vorlage oder JSON-Datei (Button „JSON / Vorlage")
+Öffnet ein Modal mit drei Optionen:
+- **Beispiel-Vorlage anwenden** — füllt das Formular mit Beispielwerten (Titel, Zutaten, Zubereitung, Nährwerte, Kategorie). Du passt es einfach an deinen Geschmack an und speicherst es als neues Rezept.
+- **Aus vorhandenem Rezept** — Liste aller deiner Rezepte (mit Suche). Klick auf ein Rezept übernimmt alle Daten als Vorlage (Titel mit „(Kopie)"-Suffix). Praktisch, um Varianten eines Rezepts anzulegen, ohne alles neu zu tippen.
+- **JSON-Datei importieren** — lädt eine JSON-Datei (z. B. Export aus der Web-App).
 
 #### Android: Direkt aus dem Browser teilen
 Auf Android erscheint Kochwelt im System-Share-Sheet. Tippe im Browser auf **Teilen → Kochwelt** — die App öffnet sich und importiert das Rezept sofort.
@@ -195,19 +201,23 @@ Der Planer zeigt dir eine Wochensicht (Montag–Sonntag) mit je zwei Mahlzeit-Sl
 Pfeiltasten links/rechts wechseln zur vorherigen oder nächsten Woche. Der aktuelle Wochentag ist farbig hervorgehoben.
 
 ### Mahlzeit-Slots
-Jeder Tag hat zwei Slots: **Mittag** (Sonnen-Icon) und **Abend** (Mond-Icon).
+Jeder Tag hat zwei Slots: **Mittag** (Sonnen-Icon) und **Abend** (Mond-Icon), zusätzlich beliebig viele **Snacks**.
 
 #### Rezept einplanen
-Tippe auf **Rezept** → Rezept-Picker öffnet sich als Modal. Rezept auswählen, Portionszahl einstellen, **Wählen** tippen.
+Tippe auf **Rezept** → Rezept-Picker öffnet sich als Modal. Rezept auswählen, Portionszahl einstellen (= „wie viele Portionen kochen?", relevant für die Einkaufsliste), **Wählen** tippen.
 
-#### Kalte Küche eintragen
-Tippe auf **Kalte Küche** für eine Mahlzeit ohne Rezept (z. B. Brot, Salat, Rest). Titel und Nährwerte können manuell eingetragen werden. Standardwerte: Mittag 550 kcal / 25 g Eiweiß, Abend 400 kcal / 20 g Eiweiß.
+#### Kalte Küche / Snack eintragen
+Tippe auf **Kalte Küche** (Mittag/Abend) bzw. **Snack hinzufügen** für eine Mahlzeit ohne Rezept (z. B. Brot, Salat, Rest, Apfel mit Nüssen). Im Modal erscheinen oben **Typ-Chips** (Frühstück / Mittag / Abend / Snack) — bei Auswahl werden kcal/Protein/Fett/KH automatisch aus deinen **Tageszielen × Verteilung** vorbelegt (z. B. Frühstück 25 % von 2000 kcal = 500 kcal). Du kannst die Werte beliebig anpassen.
+
+> **Hinweis:** Manuelle Werte zählen als **1 Portion** direkt zum Tagesziel — der Hinweis steht im Modal.
 
 #### Mahlzeit entfernen
 Tippe auf das **×**-Symbol in der Ecke einer geplanten Mahlzeit.
 
 ### Nährwert-Fortschrittsbalken
 Unter jedem Tag werden Kalorien, Eiweiß, Kohlenhydrate und Fett als Fortschrittsbalken angezeigt, verglichen mit deinen Tageszielen (einstellbar unter Einstellungen).
+
+**Berechnungs-Logik:** Pro geplanter Mahlzeit wird **immer 1 Portion** zum Tagesziel gezählt. Beispiel: Rezept mit 1500 kcal für 3 Portionen → 500 kcal pro Portion → 500 kcal/1500 kcal = 33 %. Bei Snacks/Kalter Küche werden die eingetragenen Werte direkt als 1 Portion addiert.
 
 **Farbcode:** Grün ≥ 75 % · Orange knapp unter/über dem Ziel · Rot > 105 %
 

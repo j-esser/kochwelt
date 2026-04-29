@@ -270,6 +270,8 @@ RECIPE_TABS: string[]
 ```typescript
 getWeekPlan(): Promise<WeekPlan>
 setMeal(date: string, slot: MealSlot, meal: PlannedMeal | null): Promise<void>
+addSnack(date: string, snack: PlannedMeal): Promise<void>
+removeSnack(date: string, index: number): Promise<void>
 weekStart(date: Date): Date
 toDateKey(date: Date): string               // → "YYYY-MM-DD"
 addDays(date: Date, n: number): Date
@@ -279,7 +281,6 @@ getWeekStats(): Promise<{ days: number; meals: number }>
 
 WEEKDAYS: string[]        // ['Mo','Di','Mi','Do','Fr','Sa','So']
 WEEKDAYS_LONG: string[]
-COLD_MEAL_DEFAULTS: Record<MealSlot, Nutrition>
 ```
 
 ### `shoppingList.ts`
@@ -301,8 +302,14 @@ CATEGORY_ORDER: string[]
 ```typescript
 getNutritionGoals(): Promise<NutritionGoals>   // fehlende Felder mit Defaults
 saveNutritionGoals(goals: NutritionGoals): Promise<void>
-DEFAULT_GOALS: NutritionGoals  // kcal: 2000, protein: 75, carbs: 250, fat: 70
+getMealDefaults(goals: NutritionGoals, type: MealType): { kcal, protein, carbs, fat }
+DEFAULT_GOALS: NutritionGoals          // kcal: 2000, protein: 75, carbs: 250, fat: 70
+MEAL_TYPE_LABELS: Record<MealType, string>  // 'frueh'→'Frühstück' etc.
+
+type MealType = 'frueh' | 'mittag' | 'abend' | 'sonst'
 ```
+
+**`getMealDefaults`:** Berechnet Default-Nährwerte für einen Mahlzeit-Typ als `Tagesziel × splits[type] / 100`. Wird im Snack-/Kalte-Küche-Modal in `planer.tsx` für die Vorbelegung verwendet (Frühstück 25 % von 2000 kcal = 500 kcal).
 
 ### `settingsStore.ts`
 
@@ -404,6 +411,30 @@ const url = urlOverride ?? urlInput.trim();
 // Einheiten: g, kg, ml, l, EL, TL, Stk., Prise, Bund, ...
 // Fallback: Zeile = Name ohne Menge
 ```
+
+**Vorlage-/Import-Modal** (Button „JSON / Vorlage"):
+- State: `showTemplateModal`, `templateMode: 'choose'|'pickRecipe'`
+- Drei Optionen im Choose-Modus:
+  - `handleApplyBlankTemplate()` → `applyImport(RECIPE_TEMPLATE)` (Konstante mit Beispieldaten)
+  - „Aus vorhandenem Rezept" → wechselt zu `pickRecipe`, lädt `getAllRecipes()`, zeigt durchsuchbare Liste
+  - `handleApplyFromRecipe(recipe)` → kopiert alle Felder (Titel + „(Kopie)"-Suffix), ohne `id`/`photo`/`rating`
+  - `handleJsonImport()` → bestehender DocumentPicker-Flow
+- `applyImport()` setzt Title, Description, CookTime, Portions, Ingredients, Reference, kcal/Protein/Fett/KH, Categories.
+
+**Tastatur-Behandlung** (Lib `react-native-keyboard-aware-scroll-view`):
+- `KeyboardAwareScrollView` statt `ScrollView`
+- Auf Multiline-Inputs (Zutaten, Zubereitung): Refs + `onContentSizeChange` + `onFocus` rufen `scrollToFocusedInput(node, 120, 0)` — KAS scrollt sonst nicht beim Wachsen des Cursors
+
+### `app/(tabs)/planer.tsx` — Tagesziel-Berechnung
+
+```typescript
+// calcDayNutrition: pro Mahlzeit immer 1 Portion
+const factor = 1 / (r.portions || 1);
+kcal += r.nutrition.kcal * factor;
+// meal.portions ist NUR für die Einkaufsliste relevant
+```
+
+**Snack-/Kalte-Küche-Modal:** Mahlzeit-Typ-Chips (Frühstück/Mittag/Abend/Snack) → `getMealDefaults(goals, type)` füllt kcal/Protein/Fett/KH vor. Default-Auswahl je nach Einstiegspunkt (Mittag-Slot → 'mittag', Abend-Slot → 'abend', „Snack hinzufügen" → 'sonst'). Werte zählen direkt als 1 Portion zum Tagesziel.
 
 ---
 
