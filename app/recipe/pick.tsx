@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, TextInput, FlatList, ScrollView,
-  TouchableOpacity, StyleSheet,
+  TouchableOpacity, StyleSheet, useWindowDimensions,
 } from 'react-native';
 import { RecipeImage } from '../../components/RecipeImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,17 +27,18 @@ const SMART_FILTERS: {
 // ─── Picker Card ──────────────────────────────────────────────────────────────
 
 function PickerCard({
-  recipe, cookCount, portions, onPortionsChange, onSelect,
+  recipe, cookCount, portions, isGrid = false, onPortionsChange, onSelect,
 }: {
   recipe: Recipe;
   cookCount: number;
   portions: number;
+  isGrid?: boolean;
   onPortionsChange: (n: number) => void;
   onSelect: () => void;
 }) {
   const teaser = buildTeaser(recipe);
   return (
-    <View style={s.card}>
+    <View style={[s.card, isGrid ? s.cardGrid : s.cardSingle]}>
       <RecipeImage uri={recipe.photo} style={s.cardThumb} />
       <View style={[s.cardBody]}>
       <View style={s.cardTop}>
@@ -86,6 +87,11 @@ function PickerCard({
 
 export default function RecipePickScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  // Responsives Grid identisch zur Hauptliste
+  const numColumns = width >= 1100 ? 3 : width >= 700 ? 2 : 1;
+  const isGrid = numColumns > 1;
+
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [cookCounts, setCookCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState('');
@@ -204,12 +210,18 @@ export default function RecipePickScreen() {
         </ScrollView>
       </View>
 
-      {/* Rezept-Liste */}
+      {/* Rezept-Liste — responsives Grid (1 / 2 / 3 Spalten) */}
       <FlatList
+        key={`grid-${numColumns}`}
         style={{ flex: 1 }}
         data={filtered}
         keyExtractor={r => r.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        numColumns={numColumns}
+        columnWrapperStyle={isGrid ? s.gridRow : undefined}
+        contentContainerStyle={[
+          { paddingBottom: 32 },
+          isGrid ? { paddingHorizontal: 8, paddingTop: 8 } : { padding: 16 },
+        ]}
         ListHeaderComponent={
           <Text style={s.count}>{filtered.length} Rezept{filtered.length !== 1 ? 'e' : ''}</Text>
         }
@@ -220,13 +232,16 @@ export default function RecipePickScreen() {
           </View>
         }
         renderItem={({ item: r }) => (
-          <PickerCard
-            recipe={r}
-            cookCount={cookCounts[r.id] ?? 0}
-            portions={portions[r.id] ?? 1}
-            onPortionsChange={n => setPortions(prev => ({ ...prev, [r.id]: n }))}
-            onSelect={() => handleSelect(r)}
-          />
+          <View style={isGrid ? s.gridItem : undefined}>
+            <PickerCard
+              recipe={r}
+              cookCount={cookCounts[r.id] ?? 0}
+              portions={portions[r.id] ?? 1}
+              isGrid={isGrid}
+              onPortionsChange={n => setPortions(prev => ({ ...prev, [r.id]: n }))}
+              onSelect={() => handleSelect(r)}
+            />
+          </View>
         )}
       />
     </SafeAreaView>
@@ -257,8 +272,14 @@ const s = StyleSheet.create({
 
   count: { fontSize: 12, color: '#a8a29e', paddingBottom: 8 },
 
-  card: { backgroundColor: '#ffffff', borderRadius: 16, marginBottom: 10, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  cardThumb: { width: '100%', height: 130 },
+  card: { backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  cardSingle: { marginBottom: 10 },
+  cardGrid: { flex: 1 },
+  // Foto: festes Seitenverhältnis statt fixer Höhe — passt sich Card-Breite an
+  cardThumb: { width: '100%', aspectRatio: 16 / 10 },
+
+  gridRow: { gap: 12, paddingHorizontal: 8 },
+  gridItem: { flex: 1, marginBottom: 12 },
   cardBody: { padding: 14 },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   teaserText: { fontSize: 12, color: '#a8a29e', marginTop: 4, marginBottom: 2 },
