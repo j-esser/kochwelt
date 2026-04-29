@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Kochwelt 1.1.0 — Was ist neu</title>
+  <style>
+    body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1c1917; line-height: 1.55; max-width: 720px; margin: 24px; }
+    h1 { color: #c2410c; font-size: 28pt; margin-bottom: 4px; }
+    h2 { color: #f97316; font-size: 18pt; margin-top: 28px; border-bottom: 2px solid #fed7aa; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-top: 18px; margin-bottom: 4px; color: #1c1917; }
+    p.tagline { color: #78716c; font-size: 12pt; margin-top: 0; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    .highlight { background: #fff7ed; padding: 12px 16px; border-left: 3px solid #f97316; border-radius: 4px; margin: 12px 0; }
+    .muted { color: #78716c; font-size: 11pt; }
+    .ask { background: #f0f9ff; padding: 12px 16px; border-left: 3px solid #0ea5e9; border-radius: 4px; margin: 12px 0; }
+  </style>
+</head>
+<body>
+
+<h1>Kochwelt 1.1.0</h1>
+<p class="tagline">Persönliche Rezeptverwaltung &amp; Wochenplaner — Update April 2026</p>
+
+<p>Liebe Tester,</p>
+
+<p>vielen Dank, dass ihr Kochwelt ausprobiert! Die neue Version bringt einige spürbare Verbesserungen
+mit — vor allem im Wochenplaner und beim Anlegen neuer Rezepte. Ein Überblick:</p>
+
+<h2>Was ist neu in 1.1.0</h2>
+
+<h3>Tageszielen — endlich logisch</h3>
+<p>Die Tageskalorien werden jetzt korrekt berechnet: pro geplanter Mahlzeit zählt
+<strong>genau eine Portion</strong> zum Tagesziel. Die Portionen-Auswahl im Picker ist nur
+noch für die Einkaufsliste relevant („wie viele Portionen koche ich?").</p>
+
+<h3>Mahlzeit-Typen mit smarter Vorbelegung</h3>
+<p>Beim Hinzufügen eines Snacks oder einer kalten Mahlzeit kannst du jetzt zwischen
+<strong>Frühstück, Mittag, Abend und Snack</strong> wählen. Die Nährwerte werden automatisch
+aus deinem Tagesziel und der konfigurierten Verteilung vorbelegt — z.&nbsp;B. Frühstück
+25&nbsp;% von 2000 kcal = 500 kcal. Der Titel passt sich ebenfalls an.</p>
+
+<h3>Rezept-Vorlagen</h3>
+<p>Beim Klick auf <em>JSON / Vorlage</em> öffnet sich jetzt ein Auswahl-Modal:</p>
+<ul>
+  <li><strong>Beispiel-Vorlage anwenden</strong> — alle Felder sind mit Beispielwerten gefüllt, du passt nur an, was du ändern willst.</li>
+  <li><strong>Aus vorhandenem Rezept</strong> — wähle ein Rezept aus deiner Liste als Vorlage. Praktisch für Varianten („Spaghetti Bolognese mit Linsen statt Hack").</li>
+  <li><strong>JSON-Datei importieren</strong> — wie bisher.</li>
+</ul>
+
+<h3>iPad-Layout</h3>
+<p>Auf dem iPad sehen die Rezeptlisten jetzt deutlich ansprechender aus: <strong>2 oder 3 Spalten</strong> statt
+einer einzelnen, zu breiten Karte. Die Fotos sind nicht mehr flach-langgezogen, sondern haben ein
+schönes Cookbook-Verhältnis.</p>
+
+<h3>Tastatur deckt Eingaben nicht mehr ab</h3>
+<p>Beim Tippen längerer Zutatenlisten oder Zubereitungstexte wandert der Bildausschnitt jetzt mit dem
+Cursor mit — kein blindes Tippen unterhalb der Tastatur mehr. Auch der Snack-Dialog rutscht sauber
+nach oben.</p>
+
+<h3>Kleinere Verbesserungen</h3>
+<ul>
+  <li>Snack-Eingabe-Modal mit Hinweis „Werte zählen als 1 Portion direkt zum Tagesziel"</li>
+  <li>Default-Portionsauswahl im Picker einheitlich auf 1</li>
+  <li>App-Icon aktualisiert</li>
+</ul>
+
+<h2>Funktions-Übersicht</h2>
+
+<h3>Home</h3>
+<ul>
+  <li>Persönliche Begrüßung &amp; Wochenstatistik (geplante Mahlzeiten, Tage)</li>
+  <li>Rezept-des-Tages-Vorschlag</li>
+</ul>
+
+<h3>Rezepte</h3>
+<ul>
+  <li>40 Basis-Rezepte beim ersten Start</li>
+  <li>Volltext-Suche &amp; Kategorie-Tabs (Pasta, Reis, Curry, Suppe, Fisch, Fleisch, Vegetarisch, Salat, Eintopf)</li>
+  <li>Smart-Filter: Schnell, Einfach, High-Protein, Low-Carb, Low-Kalorie</li>
+  <li>Detail-Ansicht mit Live-Portionsskalierung der Zutaten</li>
+  <li>Persönliche Bewertung (1–5 Sterne)</li>
+  <li>Foto pro Rezept (Kamera oder Galerie)</li>
+  <li>Nährwerte mit kcal/Portion-Anzeige</li>
+  <li>Koch-Zähler („3× in den letzten 4 Wochen")</li>
+  <li>Browser-Import via URL, Clipboard-Erkennung, Android-Share-Sheet</li>
+  <li>Vorlage-Modal mit Beispiel-Vorlage und „Aus Rezept duplizieren"</li>
+  <li>Responsives Layout für iPad (2/3 Spalten)</li>
+</ul>
+
+<h3>Wochenplaner</h3>
+<ul>
+  <li>7 Tage je Mittag + Abend, plus beliebig viele Snacks</li>
+  <li>Rezept-Picker mit Suche, Filtern und Portionswahl</li>
+  <li>Kalte Küche &amp; Snacks mit Mahlzeit-Typ (Frühstück/Mittag/Abend/Snack) und Auto-Vorbelegung</li>
+  <li>Tagesziel-Fortschrittsbalken (Kalorien, Eiweiß, Kohlenhydrate, Fett) mit Farbcode</li>
+  <li>Wochen-Navigation vor und zurück</li>
+</ul>
+
+<h3>Shopping / Einkaufsliste</h3>
+<ul>
+  <li>Automatisch aus dem Wochenplan generiert (inkl. Snacks)</li>
+  <li>Tagesauswahl — nur die Tage anzeigen, die du einkaufen willst</li>
+  <li>Kategorien-Sortierung (Gemüse &amp; Obst, Fleisch &amp; Fisch, Mopro …)</li>
+  <li>Mengen-Zusammenfassung („600&nbsp;g (400 + 200) Tomaten")</li>
+  <li>„Vorhanden"-Markierung — Artikel aus dem Vorrat ausblenden</li>
+  <li>Teilen als Text (WhatsApp, Mail) oder als <strong>.ics-Erinnerung</strong> für die iOS Reminders-App</li>
+</ul>
+
+<h3>Einstellungen</h3>
+<ul>
+  <li>Tageszielen für Kalorien, Eiweiß, Kohlenhydrate, Fett</li>
+  <li>Mahlzeit-Verteilung in % (Frühstück / Mittag / Abend / Snacks)</li>
+  <li>Erinnerungen (Wöchentlich oder Täglich, frei wählbare Uhrzeit)</li>
+  <li>Hinweise zum Browser-Import</li>
+</ul>
+
+<h2>Was ihr gerne testen dürft</h2>
+
+<div class="highlight">
+<ul>
+  <li><strong>Wochenplaner</strong>: Mahlzeit hinzufügen, Mahlzeit-Typ wechseln, Tagesziel-Balken beobachten.</li>
+  <li><strong>Neues Rezept</strong>: lange Zutatenliste tippen — verdeckt die Tastatur noch was?</li>
+  <li><strong>Vorlage-Funktion</strong>: ein neues Rezept aus einem bestehenden duplizieren und anpassen.</li>
+  <li><strong>iPad</strong>: Liste im Hoch- und Querformat anschauen — Layout sollte sich anpassen.</li>
+  <li><strong>Browser-Import</strong> (Chefkoch, KptnCook, KitchenStories u. a.): URL kopieren → Kochwelt öffnen → Import-Vorschlag erscheint.</li>
+</ul>
+</div>
+
+<h2>Feedback &amp; Bugs</h2>
+
+<div class="ask">
+<p>Wenn euch etwas auffällt — Bugs, Verständnisprobleme, fehlende Funktionen oder einfach nur ein
+„das hat mir gut gefallen" — schreibt mir gerne direkt zurück. Ich freue mich über jede Rückmeldung,
+besonders über UX-Eindrücke (was war intuitiv, was hat irritiert?).</p>
+</div>
+
+<p class="muted">Vielen Dank fürs Testen!<br>
+Jürgen</p>
+
+</body>
+</html>

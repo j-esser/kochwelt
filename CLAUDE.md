@@ -186,3 +186,23 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 - ⏳ Nährwert-Statistiken (Charts)
 - ⏳ Push-Erinnerungen (Kochen-Erinnerung)
 - ⏳ Cloud-Sync (Supabase)
+
+---
+
+## Release-Workflow (TestFlight)
+
+Bei jedem App-Release wird unter `docs/release-notes/` ein Tester-Dokument
+in drei Formaten angelegt: `Kochwelt-v<version>.{html,docx,rtf}`. Vorlage
+ist `Kochwelt-v1.1.0.html` — Struktur: Begrüßung → „Was ist neu" → „Funktions-
+Übersicht" (Home / Rezepte / Planer / Shopping / Einstellungen) →
+Test-Schwerpunkte → Feedback-Aufruf.
+
+Konvertierung HTML → docx/rtf via `textutil` (macOS, kein Pandoc nötig):
+
+```bash
+cd docs/release-notes
+textutil -convert docx -output Kochwelt-v<version>.docx Kochwelt-v<version>.html
+textutil -convert rtf  -output Kochwelt-v<version>.rtf  Kochwelt-v<version>.html
+```
+
+Bei Versions-Bump in `app.json` (`expo.version`) immer mitpflegen.
