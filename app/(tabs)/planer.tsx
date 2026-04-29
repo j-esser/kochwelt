@@ -336,13 +336,19 @@ export default function PlanerScreen() {
   function selectMealType(type: MealType) {
     setMealType(type);
     applyMealTypeDefaults(type);
+    // Titel mit Typ-Label vorbelegen — aber User-Eingabe respektieren:
+    // nur überschreiben, wenn Titel leer oder einer der Default-Labels war.
+    const defaultLabels = Object.values(MEAL_TYPE_LABELS);
+    if (!coldTitle.trim() || defaultLabels.includes(coldTitle.trim())) {
+      setColdTitle(MEAL_TYPE_LABELS[type]);
+    }
   }
 
   function openColdMeal(date: string, slot: MealSlot) {
     setColdTarget({ date, slot });
     setIsSnack(false);
     setMealType(slot);
-    setColdTitle('');
+    setColdTitle(MEAL_TYPE_LABELS[slot]);
     applyMealTypeDefaults(slot);
   }
 
@@ -350,7 +356,7 @@ export default function PlanerScreen() {
     setColdTarget({ date, slot: 'mittag' }); // slot wird für Snacks nicht genutzt
     setIsSnack(true);
     setMealType('sonst');
-    setColdTitle('');
+    setColdTitle(MEAL_TYPE_LABELS['sonst']);
     applyMealTypeDefaults('sonst');
   }
 
