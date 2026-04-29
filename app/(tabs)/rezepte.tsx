@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, FlatList, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { RecipeImage } from '../../components/RecipeImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useFocusEffect } from 'expo-router';
@@ -60,14 +60,25 @@ function formatCookDates(dates: string[]): string {
   }).join(', ');
 }
 
-function RecipeCard({ recipe, cookCount, onPress }: { recipe: Recipe; cookCount?: number; onPress: () => void }) {
+function RecipeCard({
+  recipe, cookCount, isGrid = false, onPress,
+}: {
+  recipe: Recipe;
+  cookCount?: number;
+  isGrid?: boolean;
+  onPress: () => void;
+}) {
   async function showCookDates() {
     const dates = await getCookDatesForRecipe(recipe.id, 28);
     Alert.alert('Gekocht am', formatCookDates(dates));
   }
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      style={[styles.card, isGrid ? styles.cardGrid : styles.cardSingle]}
+    >
       <RecipeImage uri={recipe.photo} style={styles.cardThumb} />
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
@@ -117,6 +128,11 @@ function RecipeCard({ recipe, cookCount, onPress }: { recipe: Recipe; cookCount?
 
 export default function RezepteScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  // Responsives Grid: 1 Spalte auf Phone, 2 auf Tablet, 3 auf großes iPad / Landscape
+  const numColumns = width >= 1100 ? 3 : width >= 700 ? 2 : 1;
+  const isGrid = numColumns > 1;
+
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -260,14 +276,28 @@ export default function RezepteScreen() {
           </ScrollView>
         </View>
 
-        {/* Rezept-Liste */}
+        {/* Rezept-Liste — responsives Grid (1 / 2 / 3 Spalten) */}
         <FlatList
+          // key erzwingt Re-Mount bei Spaltenänderung (Drehung iPad)
+          key={`grid-${numColumns}`}
           style={{ flex: 1 }}
           data={filtered}
           keyExtractor={r => r.id}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          numColumns={numColumns}
+          columnWrapperStyle={isGrid ? styles.gridRow : undefined}
+          contentContainerStyle={[
+            { paddingBottom: 20 },
+            isGrid && { paddingHorizontal: 8 },
+          ]}
           renderItem={({ item }) => (
-            <RecipeCard recipe={item} cookCount={cookCounts[item.id]} onPress={() => router.push(`/recipe/${item.id}`)} />
+            <View style={isGrid ? styles.gridItem : undefined}>
+              <RecipeCard
+                recipe={item}
+                cookCount={cookCounts[item.id]}
+                isGrid={isGrid}
+                onPress={() => router.push(`/recipe/${item.id}`)}
+              />
+            </View>
           )}
           ListHeaderComponent={
             <Text style={styles.count}>{filtered.length} Rezept{filtered.length !== 1 ? 'e' : ''}</Text>
@@ -363,8 +393,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 10,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOpacity: 0.06,
@@ -372,7 +400,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  cardThumb: { width: '100%', height: 140 },
+  cardSingle: { marginHorizontal: 16, marginBottom: 10 },
+  cardGrid: { flex: 1 },
+  // Foto: festes Seitenverhältnis statt fixer Höhe — passt sich Card-Breite an
+  cardThumb: { width: '100%', aspectRatio: 16 / 10 },
+
+  gridRow: { gap: 12, paddingHorizontal: 8 },
+  gridItem: { flex: 1, marginBottom: 12 },
   cardBody: { padding: 16, paddingBottom: 14 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   cardTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917', lineHeight: 22 },
