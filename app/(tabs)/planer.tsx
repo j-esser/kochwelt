@@ -1,46 +1,54 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Modal, Pressable,
-  TextInput, StyleSheet, Alert,
+  TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  getWeekPlan, setMeal, weekStart, toDateKey, addDays,
-  WEEKDAYS_LONG, COLD_MEAL_DEFAULTS, type WeekPlan, type MealSlot, type PlannedMeal,
+  getWeekPlan, setMeal, addSnack, removeSnack, weekStart, toDateKey, addDays,
+  WEEKDAYS_LONG, type WeekPlan, type MealSlot, type PlannedMeal, type DayPlan,
 } from '../../services/plannerStore';
 
 import { getAllRecipes, seedIfEmpty, type Recipe } from '../../services/recipeStore';
 import {
-  getNutritionGoals, DEFAULT_GOALS, type NutritionGoals, type MealSplits,
+  getNutritionGoals, getMealDefaults, MEAL_TYPE_LABELS, DEFAULT_GOALS,
+  type NutritionGoals, type MealSplits, type MealType,
 } from '../../services/nutritionGoals';
 import { registerPickCallback } from '../../services/recipePicker';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function calcDayNutrition(
-  dayData: Partial<Record<MealSlot, PlannedMeal>>,
+  dayData: DayPlan,
   recipeMap: Record<string, Recipe>,
 ) {
   let kcal = 0, protein = 0, carbs = 0, fat = 0;
-  for (const meal of Object.values(dayData) as PlannedMeal[]) {
+
+  function addMeal(meal: PlannedMeal) {
     if (meal.manualNutrition) {
       kcal    += meal.manualNutrition.kcal;
       protein += meal.manualNutrition.protein;
       carbs   += meal.manualNutrition.carbs;
       fat     += meal.manualNutrition.fat;
-      continue;
+      return;
     }
-    if (!meal.recipeId) continue;
+    if (!meal.recipeId) return;
     const r = recipeMap[meal.recipeId];
-    if (!r?.nutrition) continue;
-    const factor = meal.portions / (r.portions || 1);
+    if (!r?.nutrition) return;
+    // Tagesziel zählt immer 1 Portion pro geplanter Mahlzeit — meal.portions ist nur für die Einkaufsliste relevant
+    const factor = 1 / (r.portions || 1);
     if (r.nutrition.kcal != null) kcal += r.nutrition.kcal * factor;
     if (r.nutrition.protein != null) protein += r.nutrition.protein * factor;
     if (r.nutrition.carbs != null) carbs += r.nutrition.carbs * factor;
     if (r.nutrition.fat != null) fat += r.nutrition.fat * factor;
   }
+
+  if (dayData.mittag) addMeal(dayData.mittag);
+  if (dayData.abend) addMeal(dayData.abend);
+  for (const snack of dayData.snacks ?? []) addMeal(snack);
+
   return {
     kcal: Math.round(kcal),
     protein: Math.round(protein),
@@ -307,38 +315,70 @@ export default function PlanerScreen() {
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [goals, setGoals] = useState<NutritionGoals>(DEFAULT_GOALS);
 
-  // Kalte Küche Modal
+  // Kalte Küche / Snack Modal
   const [coldTarget, setColdTarget] = useState<{ date: string; slot: MealSlot } | null>(null);
+  const [isSnack, setIsSnack] = useState(false);
+  const [mealType, setMealType] = useState<MealType>('mittag');
   const [coldTitle, setColdTitle] = useState('');
   const [coldKcal, setColdKcal] = useState('');
   const [coldProtein, setColdProtein] = useState('');
   const [coldFat, setColdFat] = useState('');
   const [coldCarbs, setColdCarbs] = useState('');
 
+  function applyMealTypeDefaults(type: MealType) {
+    const def = getMealDefaults(goals, type);
+    setColdKcal(String(def.kcal));
+    setColdProtein(String(def.protein));
+    setColdFat(String(def.fat));
+    setColdCarbs(String(def.carbs));
+  }
+
+  function selectMealType(type: MealType) {
+    setMealType(type);
+    applyMealTypeDefaults(type);
+  }
+
   function openColdMeal(date: string, slot: MealSlot) {
-    const def = COLD_MEAL_DEFAULTS[slot];
     setColdTarget({ date, slot });
+    setIsSnack(false);
+    setMealType(slot);
     setColdTitle('');
-    setColdKcal(String(def?.kcal ?? 400));
-    setColdProtein(String(def?.protein ?? 20));
-    setColdFat(String(def?.fat ?? 15));
-    setColdCarbs(String(def?.carbs ?? 45));
+    applyMealTypeDefaults(slot);
+  }
+
+  function openSnackModal(date: string) {
+    setColdTarget({ date, slot: 'mittag' }); // slot wird für Snacks nicht genutzt
+    setIsSnack(true);
+    setMealType('sonst');
+    setColdTitle('');
+    applyMealTypeDefaults('sonst');
   }
 
   async function handleSaveColdMeal() {
     if (!coldTarget) return;
-    await setMeal(coldTarget.date, coldTarget.slot, {
+    const meal: PlannedMeal = {
       portions: 1,
-      manualTitle: coldTitle.trim() || 'Kalte Küche',
+      manualTitle: coldTitle.trim() || (isSnack ? 'Snack' : 'Kalte Küche'),
       manualNutrition: {
         kcal: parseInt(coldKcal) || 0,
         protein: parseInt(coldProtein) || 0,
         fat: parseInt(coldFat) || 0,
         carbs: parseInt(coldCarbs) || 0,
       },
-    });
+    };
+    if (isSnack) {
+      await addSnack(coldTarget.date, meal);
+    } else {
+      await setMeal(coldTarget.date, coldTarget.slot, meal);
+    }
     setWeekPlan(await getWeekPlan());
     setColdTarget(null);
+    setIsSnack(false);
+  }
+
+  async function handleRemoveSnack(date: string, index: number) {
+    await removeSnack(date, index);
+    setWeekPlan(await getWeekPlan());
   }
 
   const monday = addDays(weekStart(new Date()), weekOffset * 7);
@@ -427,7 +467,7 @@ export default function PlanerScreen() {
               </View>
 
               {(['mittag', 'abend'] as MealSlot[]).map(slot => {
-                const meal = dayData[slot];
+                const meal = slot === 'mittag' ? dayData.mittag : dayData.abend;
                 const recipe = (meal?.recipeId) ? recipeMap[meal.recipeId] : null;
                 const isManual = meal && !meal.recipeId && !!meal.manualTitle;
 
@@ -441,7 +481,7 @@ export default function PlanerScreen() {
                       <View style={ss.mealChip}>
                         <View style={{ flex: 1 }}>
                           <Text style={ss.mealTitle} numberOfLines={1}>{recipe.title}</Text>
-                          <Text style={ss.mealMeta}>{meal!.portions} Port.{recipe.nutrition?.kcal ? ` · ${Math.round(recipe.nutrition.kcal / (recipe.portions || 2))} kcal/Port.` : ''}</Text>
+                          <Text style={ss.mealMeta}>{meal!.portions} Port.{recipe.nutrition?.kcal ? ` · ${Math.round(recipe.nutrition.kcal / (recipe.portions || 1))} kcal/Port.` : ''}</Text>
                         </View>
                         <TouchableOpacity onPress={() => handleRemove(key, slot)} style={ss.removeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                           <Ionicons name="close-circle" size={18} color="#f97316" />
@@ -473,53 +513,109 @@ export default function PlanerScreen() {
                 );
               })}
 
+              {/* Snacks */}
+              {(dayData.snacks ?? []).map((snack, idx) => (
+                <View key={`snack-${idx}`} style={ss.slotRow}>
+                  <View style={ss.slotLabelRow}>
+                    <Ionicons name="cafe-outline" size={12} color="#78716c" />
+                    <Text style={ss.slotLabel}>Snack</Text>
+                  </View>
+                  <View style={[ss.mealChip, ss.mealChipSnack]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={ss.mealTitle} numberOfLines={1}>{snack.manualTitle || 'Snack'}</Text>
+                      <Text style={ss.mealMeta}>{snack.manualNutrition?.kcal ?? 0} kcal</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => handleRemoveSnack(key, idx)} style={ss.removeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close-circle" size={18} color="#78716c" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+
+              {/* Snack hinzufügen */}
+              <TouchableOpacity style={ss.addSnackBtn} onPress={() => openSnackModal(key)}>
+                <Ionicons name="add-circle-outline" size={13} color="#a8a29e" />
+                <Text style={ss.addSnackText}>Snack hinzufügen</Text>
+              </TouchableOpacity>
+
               <DayNutritionBar nutrition={nutrition} goals={goals} />
             </View>
           );
         })}
       </ScrollView>
 
-      {/* Kalte Küche Modal */}
-      <Modal visible={!!coldTarget} animationType="slide" transparent onRequestClose={() => setColdTarget(null)}>
-        <Pressable style={ss.modalBackdrop} onPress={() => setColdTarget(null)} />
-        <View style={ss.modalSheet}>
-          <View style={ss.modalHandle} />
-          <Text style={ss.modalTitle}>Kalte Küche / Snack</Text>
+      {/* Kalte Küche / Snack Modal */}
+      <Modal visible={!!coldTarget} animationType="slide" transparent onRequestClose={() => { setColdTarget(null); setIsSnack(false); }}>
+        <Pressable
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.35)' }]}
+          onPress={() => { setColdTarget(null); setIsSnack(false); }}
+        />
+        <KeyboardAvoidingView
+          style={{ flex: 1, justifyContent: 'flex-end' }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          pointerEvents="box-none"
+        >
+          <View style={ss.modalSheet}>
+            <View style={ss.modalHandle} />
+            <Text style={ss.modalTitle}>{isSnack ? 'Snack / Zwischenmahlzeit' : 'Kalte Küche / Snack'}</Text>
 
-          <Text style={ss.modalLabel}>Bezeichnung (optional)</Text>
-          <TextInput
-            style={ss.coldInput}
-            placeholder="z.B. Brot & Käse"
-            placeholderTextColor="#a8a29e"
-            value={coldTitle}
-            onChangeText={setColdTitle}
-          />
+            <Text style={ss.modalLabel}>Mahlzeit-Typ</Text>
+            <Text style={ss.modalHint}>Vorbelegung der Werte aus deinen Tageszielen × Anteil.</Text>
+            <View style={ss.typeChipRow}>
+              {(['frueh', 'mittag', 'abend', 'sonst'] as MealType[]).map(t => {
+                const active = mealType === t;
+                return (
+                  <TouchableOpacity
+                    key={t}
+                    onPress={() => selectMealType(t)}
+                    style={[ss.typeChip, active && ss.typeChipActive]}
+                  >
+                    <Text style={[ss.typeChipText, active && ss.typeChipTextActive]}>
+                      {MEAL_TYPE_LABELS[t]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
-          <Text style={ss.modalLabel}>Nährwerte</Text>
-          <View style={ss.coldRow}>
-            {([
-              { label: 'kcal', value: coldKcal, set: setColdKcal },
-              { label: 'Protein g', value: coldProtein, set: setColdProtein },
-              { label: 'Fett g', value: coldFat, set: setColdFat },
-              { label: 'KH g', value: coldCarbs, set: setColdCarbs },
-            ] as const).map(({ label, value, set }) => (
-              <View key={label} style={ss.coldField}>
-                <TextInput
-                  style={ss.coldNumInput}
-                  keyboardType="numeric"
-                  value={value}
-                  onChangeText={set as (v: string) => void}
-                />
-                <Text style={ss.coldUnit}>{label}</Text>
-              </View>
-            ))}
+            <Text style={ss.modalLabel}>Bezeichnung (optional)</Text>
+            <TextInput
+              style={ss.coldInput}
+              placeholder={isSnack ? 'z.B. Apfel & Nüsse' : 'z.B. Brot & Käse'}
+              placeholderTextColor="#a8a29e"
+              value={coldTitle}
+              onChangeText={setColdTitle}
+              returnKeyType="next"
+            />
+
+            <Text style={ss.modalLabel}>Nährwerte (pro Portion)</Text>
+            <Text style={ss.modalHint}>Werte zählen als 1 Portion direkt zum Tagesziel.</Text>
+            <View style={ss.coldRow}>
+              {([
+                { label: 'kcal', value: coldKcal, set: setColdKcal },
+                { label: 'Protein g', value: coldProtein, set: setColdProtein },
+                { label: 'Fett g', value: coldFat, set: setColdFat },
+                { label: 'KH g', value: coldCarbs, set: setColdCarbs },
+              ] as const).map(({ label, value, set }) => (
+                <View key={label} style={ss.coldField}>
+                  <TextInput
+                    style={ss.coldNumInput}
+                    keyboardType="numeric"
+                    value={value}
+                    onChangeText={set as (v: string) => void}
+                    returnKeyType="done"
+                  />
+                  <Text style={ss.coldUnit}>{label}</Text>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity style={ss.addBtn} onPress={handleSaveColdMeal} activeOpacity={0.85}>
+              <Ionicons name="checkmark" size={18} color="#ffffff" />
+              <Text style={ss.addBtnText}>Eintragen</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity style={ss.addBtn} onPress={handleSaveColdMeal} activeOpacity={0.85}>
-            <Ionicons name="checkmark" size={18} color="#ffffff" />
-            <Text style={ss.addBtnText}>Eintragen</Text>
-          </TouchableOpacity>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -561,13 +657,23 @@ const ss = StyleSheet.create({
   emptySlotText: { fontSize: 12, color: '#a8a29e' },
 
   mealChipCold: { backgroundColor: '#f0f9ff' },
+  mealChipSnack: { backgroundColor: '#f0fdf4' },
 
-  // Modal Kalte Küche
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
+  addSnackBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8, paddingVertical: 6 },
+  addSnackText: { fontSize: 12, color: '#a8a29e' },
+
+  // Modal Kalte Küche / Snack
   modalSheet: { backgroundColor: '#ffffff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHandle: { width: 40, height: 4, backgroundColor: '#e7e5e4', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 20 },
   modalLabel: { fontSize: 11, fontWeight: '600', color: '#a8a29e', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, marginTop: 16 },
+  modalHint: { fontSize: 12, color: '#a8a29e', marginTop: -4, marginBottom: 8, lineHeight: 16 },
+
+  typeChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 4 },
+  typeChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: '#e7e5e4', backgroundColor: '#ffffff' },
+  typeChipActive: { backgroundColor: '#f97316', borderColor: '#f97316' },
+  typeChipText: { fontSize: 13, fontWeight: '500', color: '#57534e' },
+  typeChipTextActive: { color: '#ffffff' },
 
   coldInput: { backgroundColor: '#f5f5f4', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 15, color: '#1c1917' },
   coldRow: { flexDirection: 'row', gap: 8 },

@@ -39,3 +39,24 @@ export async function getNutritionGoals(): Promise<NutritionGoals> {
 export async function saveNutritionGoals(goals: NutritionGoals): Promise<void> {
   await AsyncStorage.setItem(KEY, JSON.stringify(goals));
 }
+
+export type MealType = keyof MealSplits; // 'frueh' | 'mittag' | 'abend' | 'sonst'
+
+// Liefert die Default-Nährwerte für eine Mahlzeit-Art basierend auf den
+// Tageszielen × konfiguriertem Anteil (z.B. Frühstück 25% von 2000 kcal = 500 kcal).
+export function getMealDefaults(goals: NutritionGoals, type: MealType) {
+  const pct = (goals.splits[type] ?? 0) / 100;
+  return {
+    kcal: Math.round(goals.kcal * pct),
+    protein: Math.round(goals.protein * pct),
+    carbs: Math.round(goals.carbs * pct),
+    fat: Math.round(goals.fat * pct),
+  };
+}
+
+export const MEAL_TYPE_LABELS: Record<MealType, string> = {
+  frueh: 'Frühstück',
+  mittag: 'Mittag',
+  abend: 'Abend',
+  sonst: 'Snack',
+};

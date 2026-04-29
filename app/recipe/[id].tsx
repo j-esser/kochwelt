@@ -65,7 +65,7 @@ export default function RecipeDetailScreen() {
     setWeekOffset(0);
     setSelectedDay(dayIndex);
     setSelectedSlot('mittag');
-    setPortions(recipe.portions);
+    setPortions(1);
     setSaved(false);
     setModalVisible(true);
   }

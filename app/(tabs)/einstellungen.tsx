@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   StyleSheet, Alert, Platform, Switch,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -112,7 +113,15 @@ export default function EinstellungenScreen() {
         <Text style={s.navTitle}>Einstellungen</Text>
       </View>
 
-      <ScrollView contentContainerStyle={s.content}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={s.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={Platform.OS === 'ios' ? 20 : 80}
+        extraHeight={140}
+      >
 
         {/* ── Browser-Import ── */}
         <SectionHeader title="Rezept aus Browser importieren" />
@@ -273,7 +282,7 @@ export default function EinstellungenScreen() {
         )}
 
         <View style={{ height: 32 }} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

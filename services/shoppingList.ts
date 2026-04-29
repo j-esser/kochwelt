@@ -1,4 +1,4 @@
-import { WeekPlan } from './plannerStore';
+import { WeekPlan, PlannedMeal } from './plannerStore';
 import { Recipe } from './recipeStore';
 
 export interface ShoppingItem {
@@ -56,7 +56,8 @@ export function buildShoppingList(weekPlan: WeekPlan, recipeMap: Record<string, 
   const raw: Record<string, { amounts: string[]; shopCategory: string }> = {};
 
   for (const dayPlan of Object.values(weekPlan)) {
-    for (const meal of Object.values(dayPlan)) {
+    const meals = [dayPlan.mittag, dayPlan.abend, ...(dayPlan.snacks ?? [])].filter(Boolean) as PlannedMeal[];
+    for (const meal of meals) {
       if (!meal.recipeId) continue;
       const recipe = recipeMap[meal.recipeId];
       if (!recipe) continue;

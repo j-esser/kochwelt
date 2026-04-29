@@ -110,7 +110,7 @@ export default function RecipePickScreen() {
   }
 
   function handleSelect(recipe: Recipe) {
-    const pts = portions[recipe.id] ?? recipe.portions;
+    const pts = portions[recipe.id] ?? 1;
     completePick(recipe.id, pts);
     router.back();
   }
@@ -223,7 +223,7 @@ export default function RecipePickScreen() {
           <PickerCard
             recipe={r}
             cookCount={cookCounts[r.id] ?? 0}
-            portions={portions[r.id] ?? r.portions}
+            portions={portions[r.id] ?? 1}
             onPortionsChange={n => setPortions(prev => ({ ...prev, [r.id]: n }))}
             onSelect={() => handleSelect(r)}
           />

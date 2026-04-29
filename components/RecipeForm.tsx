@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, TextInput, ScrollView, TouchableOpacity, Alert,
-  ActivityIndicator, Image, Platform,
+  View, Text, TextInput, TouchableOpacity, Alert,
+  ActivityIndicator, Image, Platform, Modal, Pressable,
+  StyleSheet, FlatList, findNodeHandle,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter, Stack } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
-import { saveRecipe, saveRecipePhoto, createId, type Recipe, type Ingredient } from '../services/recipeStore';
+import { saveRecipe, saveRecipePhoto, createId, getAllRecipes, type Recipe, type Ingredient } from '../services/recipeStore';
 
 const RECIPE_TABS = [
   'Pasta', 'Reis', 'Curry', 'Suppe', 'Fisch', 'Fleisch', 'Vegetarisch', 'Salat', 'Eintopf',
@@ -122,6 +124,25 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
   const [urlInput, setUrlInput] = useState('');
   const [importing, setImporting] = useState(false);
 
+  // Vorlage-Modal state
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateMode, setTemplateMode] = useState<'choose' | 'pickRecipe'>('choose');
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
+  const [recipeSearch, setRecipeSearch] = useState('');
+
+  // Refs für Auto-Scroll bei wachsenden Multiline-Feldern
+  const scrollRef = useRef<KeyboardAwareScrollView>(null);
+  const ingredientsRef = useRef<TextInput>(null);
+  const descriptionRef = useRef<TextInput>(null);
+
+  function scrollToInput(inputRef: React.RefObject<TextInput | null>) {
+    const node = inputRef.current ? findNodeHandle(inputRef.current) : null;
+    if (node && scrollRef.current) {
+      // @ts-ignore — scrollToFocusedInput existiert auf der Instance
+      scrollRef.current.scrollToFocusedInput(node, 120, 0);
+    }
+  }
+
   // Auto-Import wenn die Seite via Deep Link mit einer URL geöffnet wurde
   useEffect(() => {
     if (importUrl && !initial) {
@@ -155,7 +176,9 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
 
   function applyImport(data: Partial<{
     title: string; description: string; cookTime: number; portions: number;
-    ingredientsText: string; reference: string; kcal: string; categories: string[];
+    ingredientsText: string; reference: string;
+    kcal: string; protein: string; fat: string; carbs: string;
+    categories: string[];
   }>) {
     if (data.title) setRecipeTitle(data.title);
     if (data.description) setDescription(data.description);
@@ -164,6 +187,9 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
     if (data.ingredientsText) setIngredientsText(data.ingredientsText);
     if (data.reference) setReference(data.reference);
     if (data.kcal) setKcal(data.kcal);
+    if (data.protein) setProtein(data.protein);
+    if (data.fat) setFat(data.fat);
+    if (data.carbs) setCarbs(data.carbs);
     if (data.categories?.length) setSelectedCats(data.categories);
   }
 
@@ -207,7 +233,64 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
     }
   }
 
+  // Beispiel-Vorlage: vorausgefüllte Werte zum Bearbeiten
+  const RECIPE_TEMPLATE = {
+    title: 'Mein neues Rezept',
+    description:
+      'Beschreibe hier die Zubereitungsschritte:\n\n' +
+      '1. Wasser zum Kochen bringen.\n' +
+      '2. Zwiebeln in Würfel schneiden und in Olivenöl glasig dünsten.\n' +
+      '3. Restliche Zutaten zugeben und 10 Minuten köcheln lassen.\n' +
+      '4. Mit Salz und Pfeffer abschmecken.\n\n' +
+      'Guten Appetit!',
+    cookTime: 30,
+    portions: 2,
+    reference: '',
+    ingredientsText:
+      '400 g Spaghetti\n2 Zwiebeln\n2 Knoblauchzehen\n1 EL Olivenöl\n1 Prise Salz\n1 Prise Pfeffer',
+    kcal: '600',
+    protein: '20',
+    fat: '15',
+    carbs: '80',
+    categories: ['Pasta'],
+  };
+
+  async function openTemplateModal() {
+    setTemplateMode('choose');
+    setRecipeSearch('');
+    if (allRecipes.length === 0) {
+      const recipes = await getAllRecipes();
+      setAllRecipes(recipes);
+    }
+    setShowTemplateModal(true);
+  }
+
+  function handleApplyBlankTemplate() {
+    applyImport(RECIPE_TEMPLATE);
+    setShowTemplateModal(false);
+  }
+
+  function handleApplyFromRecipe(recipe: Recipe) {
+    applyImport({
+      title: recipe.title + ' (Kopie)',
+      description: recipe.description,
+      cookTime: recipe.cookTime,
+      portions: recipe.portions,
+      reference: recipe.reference,
+      ingredientsText: recipe.ingredients
+        .map(i => `${i.amount} ${i.name}`.trim())
+        .join('\n'),
+      kcal: recipe.nutrition?.kcal != null ? String(recipe.nutrition.kcal) : '',
+      protein: recipe.nutrition?.protein != null ? String(recipe.nutrition.protein) : '',
+      fat: recipe.nutrition?.fat != null ? String(recipe.nutrition.fat) : '',
+      carbs: recipe.nutrition?.carbs != null ? String(recipe.nutrition.carbs) : '',
+      categories: recipe.categories,
+    });
+    setShowTemplateModal(false);
+  }
+
   async function handleJsonImport() {
+    setShowTemplateModal(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: 'application/json',
@@ -338,7 +421,17 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
           <Text style={{ fontSize: 12, color: '#a8a29e', maxWidth: 260, textAlign: 'center' }}>{importUrl}</Text>
         </View>
       )}
-      <ScrollView className="flex-1 bg-stone-50" contentContainerStyle={{ padding: 16, paddingBottom: 60 }}>
+      <KeyboardAwareScrollView
+        ref={scrollRef}
+        style={{ flex: 1, backgroundColor: '#fafaf9' }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={Platform.OS === 'ios' ? 20 : 80}
+        extraHeight={140}
+      >
 
         {/* Import-Bereich (nur bei neuem Rezept) */}
         {!initial && (
@@ -356,10 +449,10 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#ffffff', borderRadius: 12, paddingVertical: 10, borderWidth: 1, borderColor: '#fed7aa' }}
-                onPress={handleJsonImport}
+                onPress={openTemplateModal}
               >
                 <Ionicons name="document-outline" size={15} color="#f97316" />
-                <Text style={{ color: '#f97316', fontWeight: '600', fontSize: 13 }}>JSON-Datei</Text>
+                <Text style={{ color: '#f97316', fontWeight: '600', fontSize: 13 }}>JSON / Vorlage</Text>
               </TouchableOpacity>
             </View>
 
@@ -487,12 +580,15 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
           Zutaten (eine pro Zeile, z.B. „400 g Nudeln")
         </Text>
         <TextInput
+          ref={ingredientsRef}
           className="bg-white border border-stone-200 rounded-xl px-4 py-3 text-stone-800 mb-4"
           multiline
           numberOfLines={8}
           textAlignVertical="top"
           value={ingredientsText}
           onChangeText={setIngredientsText}
+          onContentSizeChange={() => scrollToInput(ingredientsRef)}
+          onFocus={() => scrollToInput(ingredientsRef)}
           placeholder={"400 g Spaghetti\n150 g Speck\n4 Eier"}
           placeholderTextColor="#a8a29e"
         />
@@ -500,12 +596,15 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         {/* Zubereitung */}
         <Text className="text-stone-500 text-xs font-medium mb-1 uppercase tracking-wide">Zubereitung</Text>
         <TextInput
+          ref={descriptionRef}
           className="bg-white border border-stone-200 rounded-xl px-4 py-3 text-stone-800 mb-4"
           multiline
           numberOfLines={6}
           textAlignVertical="top"
           value={description}
           onChangeText={setDescription}
+          onContentSizeChange={() => scrollToInput(descriptionRef)}
+          onFocus={() => scrollToInput(descriptionRef)}
           placeholder="Zubereitung beschreiben…"
           placeholderTextColor="#a8a29e"
         />
@@ -526,7 +625,172 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         >
           <Text className="text-white font-semibold text-base">Rezept speichern</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollView>
+
+      {/* Vorlage-/Import-Modal */}
+      <Modal
+        visible={showTemplateModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowTemplateModal(false)}
+      >
+        <Pressable
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.35)' }]}
+          onPress={() => setShowTemplateModal(false)}
+        />
+        <View style={tm.sheet}>
+          <View style={tm.handle} />
+          {templateMode === 'choose' ? (
+            <>
+              <Text style={tm.title}>Vorlage oder Import</Text>
+              <Text style={tm.intro}>
+                Du kannst ein Rezept aus einer JSON-Datei importieren oder mit einer Vorlage starten.
+                Eine Vorlage füllt alle Felder vor — du kannst sie dann anpassen und als neues Rezept speichern.
+              </Text>
+
+              <TouchableOpacity style={tm.option} onPress={handleApplyBlankTemplate}>
+                <View style={tm.optionIconWrap}>
+                  <Ionicons name="document-text-outline" size={20} color="#f97316" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={tm.optionTitle}>Beispiel-Vorlage anwenden</Text>
+                  <Text style={tm.optionDesc}>Füllt das Formular mit Beispieltext zum Bearbeiten.</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#a8a29e" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tm.option}
+                onPress={() => setTemplateMode('pickRecipe')}
+              >
+                <View style={tm.optionIconWrap}>
+                  <Ionicons name="copy-outline" size={20} color="#f97316" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={tm.optionTitle}>Aus vorhandenem Rezept</Text>
+                  <Text style={tm.optionDesc}>
+                    Wähle ein Rezept als Vorlage — alle Daten werden übernommen.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#a8a29e" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={tm.option} onPress={handleJsonImport}>
+                <View style={tm.optionIconWrap}>
+                  <Ionicons name="cloud-upload-outline" size={20} color="#f97316" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={tm.optionTitle}>JSON-Datei importieren</Text>
+                  <Text style={tm.optionDesc}>Lade eine JSON-Datei (z.B. Export aus der Web-App).</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#a8a29e" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tm.cancelBtn}
+                onPress={() => setShowTemplateModal(false)}
+              >
+                <Text style={tm.cancelText}>Abbrechen</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={tm.headerRow}>
+                <TouchableOpacity onPress={() => setTemplateMode('choose')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="chevron-back" size={22} color="#57534e" />
+                </TouchableOpacity>
+                <Text style={tm.title}>Rezept als Vorlage</Text>
+                <TouchableOpacity onPress={() => setShowTemplateModal(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="close" size={22} color="#57534e" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={tm.searchWrap}>
+                <Ionicons name="search-outline" size={16} color="#a8a29e" />
+                <TextInput
+                  style={tm.searchInput}
+                  placeholder="Rezept suchen…"
+                  placeholderTextColor="#a8a29e"
+                  value={recipeSearch}
+                  onChangeText={setRecipeSearch}
+                />
+                {recipeSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setRecipeSearch('')}>
+                    <Ionicons name="close-circle" size={16} color="#a8a29e" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <FlatList
+                style={{ maxHeight: 380 }}
+                data={allRecipes.filter(r =>
+                  r.title.toLowerCase().includes(recipeSearch.trim().toLowerCase())
+                )}
+                keyExtractor={r => r.id}
+                ItemSeparatorComponent={() => <View style={tm.listDivider} />}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={tm.recipeRow}
+                    onPress={() => handleApplyFromRecipe(item)}
+                  >
+                    <Text style={tm.recipeTitle} numberOfLines={1}>{item.title}</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#a8a29e" />
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={
+                  <Text style={tm.empty}>Keine Rezepte gefunden.</Text>
+                }
+              />
+            </>
+          )}
+        </View>
+      </Modal>
     </>
   );
 }
+
+const tm = StyleSheet.create({
+  sheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 20, paddingBottom: 36,
+    maxHeight: '85%',
+  },
+  handle: { width: 40, height: 4, backgroundColor: '#e7e5e4', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  title: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 8 },
+  intro: { fontSize: 13, color: '#78716c', lineHeight: 19, marginBottom: 16 },
+
+  option: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 12, paddingHorizontal: 12,
+    borderWidth: 1, borderColor: '#fed7aa',
+    backgroundColor: '#fff7ed',
+    borderRadius: 14, marginBottom: 10,
+  },
+  optionIconWrap: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: '#ffffff',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  optionTitle: { fontSize: 14, fontWeight: '700', color: '#1c1917' },
+  optionDesc: { fontSize: 12, color: '#78716c', marginTop: 2, lineHeight: 16 },
+
+  cancelBtn: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
+  cancelText: { fontSize: 14, color: '#a8a29e' },
+
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  searchWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#f5f5f4', borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12,
+  },
+  searchInput: { flex: 1, fontSize: 15, color: '#1c1917' },
+  recipeRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 12, paddingHorizontal: 4,
+  },
+  recipeTitle: { flex: 1, fontSize: 14, color: '#1c1917' },
+  listDivider: { height: 1, backgroundColor: '#f5f5f4' },
+  empty: { fontSize: 13, color: '#a8a29e', textAlign: 'center', paddingVertical: 24 },
+});

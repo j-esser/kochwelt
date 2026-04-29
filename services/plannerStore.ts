@@ -10,12 +10,12 @@ export interface PlannedMeal {
   manualNutrition?: { kcal: number; protein: number; fat: number; carbs: number };
 }
 
-export const COLD_MEAL_DEFAULTS: Record<MealSlot, PlannedMeal['manualNutrition']> = {
-  mittag: { kcal: 550, protein: 25, fat: 20, carbs: 60 },
-  abend:  { kcal: 400, protein: 20, fat: 15, carbs: 45 },
-};
+export interface DayPlan {
+  mittag?: PlannedMeal;
+  abend?: PlannedMeal;
+  snacks?: PlannedMeal[];
+}
 
-export type DayPlan = Partial<Record<MealSlot, PlannedMeal>>;
 export type WeekPlan = Record<string, DayPlan>; // key: "YYYY-MM-DD"
 
 const KEY = 'kochwelt_weekplan';
@@ -30,10 +30,26 @@ export async function setMeal(date: string, slot: MealSlot, meal: PlannedMeal | 
   if (!plan[date]) plan[date] = {};
   if (meal === null) {
     delete plan[date][slot];
-    if (Object.keys(plan[date]).length === 0) delete plan[date];
+    if (!plan[date].mittag && !plan[date].abend && !plan[date].snacks?.length) delete plan[date];
   } else {
     plan[date][slot] = meal;
   }
+  await AsyncStorage.setItem(KEY, JSON.stringify(plan));
+}
+
+export async function addSnack(date: string, snack: PlannedMeal): Promise<void> {
+  const plan = await getWeekPlan();
+  if (!plan[date]) plan[date] = {};
+  plan[date].snacks = [...(plan[date].snacks ?? []), snack];
+  await AsyncStorage.setItem(KEY, JSON.stringify(plan));
+}
+
+export async function removeSnack(date: string, index: number): Promise<void> {
+  const plan = await getWeekPlan();
+  if (!plan[date]?.snacks) return;
+  plan[date].snacks = plan[date].snacks!.filter((_, i) => i !== index);
+  if (plan[date].snacks!.length === 0) delete plan[date].snacks;
+  if (!plan[date].mittag && !plan[date].abend && !plan[date].snacks?.length) delete plan[date];
   await AsyncStorage.setItem(KEY, JSON.stringify(plan));
 }
 
@@ -63,6 +79,10 @@ export function addDays(date: Date, n: number): Date {
 export const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 export const WEEKDAYS_LONG = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
+function dayMeals(dayPlan: DayPlan): PlannedMeal[] {
+  return [dayPlan.mittag, dayPlan.abend, ...(dayPlan.snacks ?? [])].filter(Boolean) as PlannedMeal[];
+}
+
 // Returns sorted list of dates (YYYY-MM-DD) when a specific recipe was planned
 export async function getCookDatesForRecipe(recipeId: string, days: number): Promise<string[]> {
   const plan = await getWeekPlan();
@@ -72,7 +92,7 @@ export async function getCookDatesForRecipe(recipeId: string, days: number): Pro
   const seen = new Set<string>();
   for (const [dateKey, dayPlan] of Object.entries(plan)) {
     if (new Date(dateKey + 'T12:00:00') >= cutoff) {
-      for (const meal of Object.values(dayPlan)) {
+      for (const meal of dayMeals(dayPlan)) {
         if (meal.recipeId === recipeId) seen.add(dateKey);
       }
     }
@@ -94,7 +114,7 @@ export async function getWeekStats(): Promise<WeekStats> {
     const key = toDateKey(addDays(monday, i));
     const dayPlan = plan[key];
     if (dayPlan) {
-      const count = Object.keys(dayPlan).length;
+      const count = (dayPlan.mittag ? 1 : 0) + (dayPlan.abend ? 1 : 0) + (dayPlan.snacks?.length ?? 0);
       if (count > 0) { days++; meals += count; }
     }
   }
@@ -110,7 +130,7 @@ export async function getCookCountsLastNDays(days: number): Promise<Record<strin
   const counts: Record<string, number> = {};
   for (const [dateKey, dayPlan] of Object.entries(plan)) {
     if (new Date(dateKey) >= cutoff) {
-      for (const meal of Object.values(dayPlan)) {
+      for (const meal of dayMeals(dayPlan)) {
         if (meal.recipeId) counts[meal.recipeId] = (counts[meal.recipeId] ?? 0) + 1;
       }
     }
