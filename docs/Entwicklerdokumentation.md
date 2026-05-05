@@ -1,6 +1,6 @@
 # Kochwelt — Entwicklerdokumentation
 
-**Version 1.1 · Stand Mai 2026**
+**Version 1.2 · Stand Mai 2026**
 
 ---
 

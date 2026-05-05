@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Kochwelt 1.2.0 — Was ist neu</title>
+  <style>
+    body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1c1917; line-height: 1.55; max-width: 720px; margin: 24px; }
+    h1 { color: #c2410c; font-size: 28pt; margin-bottom: 4px; }
+    h2 { color: #f97316; font-size: 18pt; margin-top: 28px; border-bottom: 2px solid #fed7aa; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-top: 18px; margin-bottom: 4px; color: #1c1917; }
+    p.tagline { color: #78716c; font-size: 12pt; margin-top: 0; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    .highlight { background: #fff7ed; padding: 12px 16px; border-left: 3px solid #f97316; border-radius: 4px; margin: 12px 0; }
+    .muted { color: #78716c; font-size: 11pt; }
+    .ask { background: #f0f9ff; padding: 12px 16px; border-left: 3px solid #0ea5e9; border-radius: 4px; margin: 12px 0; }
+  </style>
+</head>
+<body>
+
+<h1>Kochwelt 1.2.0</h1>
+<p class="tagline">Persönliche Rezeptverwaltung &amp; Wochenplaner — Update Mai 2026</p>
+
+<p>Liebe Tester,</p>
+
+<p>danke fürs Mittesten der Vorgänger-Version! 1.2.0 bringt vor allem eines: bessere Auffindbarkeit
+versteckter Funktionen. Ein neues Tipp-System weist auf nützliche Kniffe hin, die bisher
+unterzugehen drohten — etwa die clevere iOS-Funktion zum Scannen von Texten direkt aus dem
+Kochbuch. Außerdem könnt ihr nun einzelne Rezepte gezielt teilen, die Standard-Portionen für den
+Planer einstellen, und ich habe zwei nervige Bugs aus 1.1.0 behoben.</p>
+
+<h2>Was ist neu in 1.2.0</h2>
+
+<h3>Tipps &amp; Tricks — Hilfe direkt im Kontext</h3>
+<p>Auf jedem Bildschirm findet ihr jetzt ein <strong>kleines Fragezeichen-Symbol</strong> ❓.
+Antippen öffnet einen Hinweis-Dialog mit den Funktionen, die in diesem Bereich oft übersehen
+werden. Eine zentrale Sammlung aller Tipps gibt es zusätzlich unter <strong>Einstellungen
+→ Tipps &amp; Tricks</strong>, gruppiert nach Bereich und mit aufklappbaren Beschreibungen.</p>
+<p>Highlight: Im Eingabefeld für <strong>Zutaten</strong> oder <strong>Zubereitung</strong>
+weist die App jetzt darauf hin, dass iPhone-Nutzer mit einem <strong>Doppel-Tipp</strong> ins
+Feld die Option <em>„Text scannen"</em> bekommen — die Kamera erkennt dann Text aus einer Seite
+oder einem Zettel und fügt ihn direkt ein. Sehr praktisch beim Übernehmen aus Kochbüchern.</p>
+
+<h3>Einzelnes Rezept als JSON teilen</h3>
+<p>In der Rezept-Detailansicht oben rechts gibt es ein neues <strong>Teilen-Symbol</strong>.
+Tippt darauf, um das Rezept als kompakte <code>.json</code>-Datei per Mail, Nachrichten,
+AirDrop oder in die Dateien-App zu schicken. Die andere Person importiert die Datei einfach
+unter <strong>Rezepte → Tools → Importieren</strong> — bestehende Rezepte werden aktualisiert,
+neue hinzugefügt, vorhandene Fotos bleiben erhalten.</p>
+
+<h3>Standard-Portionen für den Wochenplaner</h3>
+<p>Unter <strong>Einstellungen → Wochenplaner</strong> könnt ihr einstellen, mit wie vielen
+Portionen eine Mahlzeit beim Hinzufügen zum Plan vorbelegt sein soll (Default: 2). Die Einstellung
+wirkt im Rezept-Picker, im „Zum Planer"-Dialog und im Snack-/Kalte-Küche-Dialog.</p>
+
+<h3>Erinnerungen — neuer Default</h3>
+<p>Bei einer Neuinstallation steht die Erinnerung jetzt auf <strong>Wöchentlich</strong>
+(Montag, 8 Uhr) statt auf „Nie". Wer das bereits manuell gesetzt hatte, behält seine Einstellung —
+neu ist nur der Startwert.</p>
+
+<h3>Bugfixes</h3>
+<ul>
+  <li><strong>Neues Rezept wurde manchmal nicht gespeichert.</strong> Ursache: Das vorgeschlagene
+  Standard-Foto verursachte einen unbemerkten Fehler beim Speicher-Vorgang, das Rezept landete dann
+  einfach nicht in der Liste. Behoben.</li>
+  <li><strong>Hochkant-Fotos (z.&nbsp;B. vom iPhone) sprengten manchmal das Karten-Layout</strong>
+  in der Rezeptliste — das Foto wurde extrem hoch dargestellt. Karten haben jetzt eine feste
+  Bildhöhe und beschneiden den Ausschnitt sauber.</li>
+</ul>
+
+<h2>Funktions-Übersicht</h2>
+
+<h3>Home</h3>
+<ul>
+  <li>Persönliche Begrüßung &amp; Wochenstatistik (geplante Mahlzeiten, Tage)</li>
+  <li>Rezept-des-Tages-Vorschlag</li>
+</ul>
+
+<h3>Rezepte</h3>
+<ul>
+  <li>40 Basis-Rezepte beim ersten Start</li>
+  <li>Volltext-Suche &amp; Kategorie-Tabs (Pasta, Reis, Curry, Suppe, Fisch, Fleisch, Vegetarisch, Salat, Eintopf)</li>
+  <li>Smart-Filter: Schnell, Einfach, High-Protein, Low-Carb, Low-Kalorie</li>
+  <li>Detail-Ansicht mit Live-Portionsskalierung der Zutaten</li>
+  <li>Persönliche Bewertung (1–5 Sterne)</li>
+  <li>Foto pro Rezept (Kamera oder Galerie)</li>
+  <li>Nährwerte mit kcal/Portion-Anzeige</li>
+  <li>Koch-Zähler („3× in den letzten 4 Wochen")</li>
+  <li>Browser-Import via URL, Clipboard-Erkennung, Android-Share-Sheet</li>
+  <li>Vorlage-Modal mit Beispiel-Vorlage und „Aus Rezept duplizieren"</li>
+  <li>Responsives Layout für iPad (2/3 Spalten)</li>
+  <li><strong>Neu:</strong> Einzel-Rezept als JSON-Datei teilen</li>
+  <li><strong>Neu:</strong> Tipp-Symbol in Header und neben Eingabefeldern</li>
+</ul>
+
+<h3>Wochenplaner</h3>
+<ul>
+  <li>7 Tage je Mittag + Abend, plus beliebig viele Snacks</li>
+  <li>Rezept-Picker mit Suche, Filtern und Portionswahl</li>
+  <li>Kalte Küche &amp; Snacks mit Mahlzeit-Typ (Frühstück/Mittag/Abend/Snack) und Auto-Vorbelegung</li>
+  <li>Tagesziel-Fortschrittsbalken (Kalorien, Eiweiß, Kohlenhydrate, Fett) mit Farbcode</li>
+  <li>Wochen-Navigation vor und zurück</li>
+  <li><strong>Neu:</strong> Standard-Portionen einstellbar</li>
+</ul>
+
+<h3>Shopping / Einkaufsliste</h3>
+<ul>
+  <li>Automatisch aus dem Wochenplan generiert (inkl. Snacks)</li>
+  <li>Tagesauswahl — nur die Tage anzeigen, die du einkaufen willst</li>
+  <li>Kategorien-Sortierung (Gemüse &amp; Obst, Fleisch &amp; Fisch, Mopro …)</li>
+  <li>Mengen-Zusammenfassung („600&nbsp;g (400 + 200) Tomaten")</li>
+  <li>„Vorhanden"-Markierung — Artikel aus dem Vorrat ausblenden</li>
+  <li>Teilen als Text (WhatsApp, Mail) oder als <strong>.ics-Erinnerung</strong> für die iOS Reminders-App</li>
+</ul>
+
+<h3>Einstellungen</h3>
+<ul>
+  <li><strong>Neu:</strong> Sektion „Tipps &amp; Tricks" ganz oben — gesammelte Hinweise zu allen Bereichen</li>
+  <li><strong>Neu:</strong> Sektion „Wochenplaner" mit Standard-Portionen</li>
+  <li>Tageszielen für Kalorien, Eiweiß, Kohlenhydrate, Fett</li>
+  <li>Mahlzeit-Verteilung in % (Frühstück / Mittag / Abend / Snacks)</li>
+  <li>Erinnerungen (Wöchentlich oder Täglich, frei wählbare Uhrzeit) — Default jetzt „Wöchentlich"</li>
+  <li>Hinweise zum Browser-Import</li>
+</ul>
+
+<h2>Was ihr gerne testen dürft</h2>
+
+<div class="highlight">
+<ul>
+  <li><strong>Tipp-Symbole entdecken</strong>: Auf jedem Bildschirm das ❓-Icon antippen — sind die Hinweise nützlich? Fehlt euch ein Tipp?</li>
+  <li><strong>iOS-Text-Scan</strong>: Bei „Neues Rezept" doppelt ins Zutaten-Feld tippen → „Text scannen" → Kochbuchseite scannen. Wie zuverlässig ist die Erkennung?</li>
+  <li><strong>Rezept teilen</strong>: In der Detailansicht das Teilen-Symbol nutzen. Auf einem zweiten Gerät (oder im Mail-Postfach) die Datei öffnen → in Kochwelt importieren → kommt das Rezept sauber an?</li>
+  <li><strong>Wochenplaner-Default</strong>: Standard-Portionen in den Einstellungen z.&nbsp;B. auf 4 setzen, dann eine Mahlzeit zum Plan hinzufügen — ist die Vorbelegung dort?</li>
+  <li><strong>Eigenes Hochkant-Foto</strong> als Rezept-Foto auswählen — wirkt die Karte in der Rezeptliste sauber?</li>
+  <li><strong>Speichern-Bug</strong>: Neues Rezept anlegen, ohne ein eigenes Foto zu wählen → das Default-Foto bleibt → speichern. Erscheint das Rezept in der Liste?</li>
+</ul>
+</div>
+
+<h2>Feedback &amp; Bugs</h2>
+
+<div class="ask">
+<p>Wenn euch etwas auffällt — Bugs, Verständnisprobleme, fehlende Funktionen oder einfach nur ein
+„das hat mir gut gefallen" — schreibt mir gerne direkt zurück. Besonders gespannt bin ich auf eure
+Eindrücke zum Tipp-System: Wirken die Hinweise hilfreich oder eher aufdringlich? Sollten manche
+Tipps gleich beim ersten Öffnen sichtbar sein?</p>
+</div>
+
+<p class="muted">Vielen Dank fürs Testen!<br>
+Jürgen</p>
+
+</body>
+</html>
