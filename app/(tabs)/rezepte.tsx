@@ -9,6 +9,7 @@ import {
   getAllRecipes, buildTeaser, RECIPE_TABS,
   type Recipe,
 } from '../../services/recipeStore';
+import { TipButton } from '../../components/TipButton';
 
 // ─── Smart Filters ────────────────────────────────────────────────────────────
 
@@ -200,6 +201,7 @@ export default function RezepteScreen() {
         <View style={styles.navBar}>
           <Text style={styles.navTitle}>Meine Rezepte</Text>
           <View style={styles.navActions}>
+            <TipButton context="recipes" size={22} color="#78716c" />
             <TouchableOpacity onPress={() => router.push('/tools')} style={styles.toolsBtn}>
               <Ionicons name="swap-vertical-outline" size={20} color="#78716c" />
             </TouchableOpacity>
@@ -402,8 +404,10 @@ const styles = StyleSheet.create({
   },
   cardSingle: { marginHorizontal: 16, marginBottom: 10 },
   cardGrid: { flex: 1 },
-  // Foto: festes Seitenverhältnis statt fixer Höhe — passt sich Card-Breite an
-  cardThumb: { width: '100%', aspectRatio: 16 / 10 },
+  // Foto: fixe Höhe, damit das Bildformat (Hochkant-Foto vom Handy etc.)
+  // nicht den Card-Layout sprengt. resizeMode='cover' im RecipeImage füllt
+  // den Rahmen ohne Verzerrung.
+  cardThumb: { width: '100%', height: 180 },
 
   gridRow: { gap: 12, paddingHorizontal: 8 },
   gridItem: { flex: 1, marginBottom: 12 },

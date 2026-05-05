@@ -12,6 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import { saveRecipe, saveRecipePhoto, createId, getAllRecipes, type Recipe, type Ingredient } from '../services/recipeStore';
+import { TipButton } from './TipButton';
 
 const RECIPE_TABS = [
   'Pasta', 'Reis', 'Curry', 'Suppe', 'Fisch', 'Fleisch', 'Vegetarisch', 'Salat', 'Eintopf',
@@ -378,7 +379,10 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
     }
     const id = initial?.id ?? createId();
     let savedPhoto: string | undefined = undefined;
-    if (photoUri && photoUri !== initial?.photo) {
+    // Nur lokale file://-URIs werden ins Foto-Verzeichnis kopiert.
+    // HTTPS-URLs (DEFAULT_PHOTO, Baseline-Fotos) werden direkt übernommen —
+    // copyAsync würde sonst werfen und das Speichern komplett abbrechen.
+    if (photoUri && photoUri.startsWith('file://') && photoUri !== initial?.photo) {
       savedPhoto = await saveRecipePhoto(id, photoUri);
     } else if (photoUri) {
       savedPhoto = photoUri;
@@ -436,9 +440,12 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         {/* Import-Bereich (nur bei neuem Rezept) */}
         {!initial && (
           <View style={{ backgroundColor: '#fff7ed', borderRadius: 16, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#fed7aa' }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: '#c2410c', marginBottom: 10 }}>
-              Rezept importieren
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#c2410c' }}>
+                Rezept importieren
+              </Text>
+              <TipButton context="recipe-form-import" size={18} color="#c2410c" />
+            </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#f97316', borderRadius: 12, paddingVertical: 10 }}
@@ -576,9 +583,12 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         </View>
 
         {/* Zutaten */}
-        <Text className="text-stone-500 text-xs font-medium mb-1 uppercase tracking-wide">
-          Zutaten (eine pro Zeile, z.B. „400 g Nudeln")
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <Text className="text-stone-500 text-xs font-medium uppercase tracking-wide">
+            Zutaten (eine pro Zeile, z.B. „400 g Nudeln")
+          </Text>
+          <TipButton context="recipe-form-text" size={18} />
+        </View>
         <TextInput
           ref={ingredientsRef}
           className="bg-white border border-stone-200 rounded-xl px-4 py-3 text-stone-800 mb-4"
@@ -594,7 +604,10 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         />
 
         {/* Zubereitung */}
-        <Text className="text-stone-500 text-xs font-medium mb-1 uppercase tracking-wide">Zubereitung</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <Text className="text-stone-500 text-xs font-medium uppercase tracking-wide">Zubereitung</Text>
+          <TipButton context="recipe-form-text" size={18} />
+        </View>
         <TextInput
           ref={descriptionRef}
           className="bg-white border border-stone-200 rounded-xl px-4 py-3 text-stone-800 mb-4"

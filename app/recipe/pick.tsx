@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAllRecipes, buildTeaser, RECIPE_TABS, type Recipe } from '../../services/recipeStore';
 import { getCookCountsLastNDays } from '../../services/plannerStore';
 import { completePick, cancelPick } from '../../services/recipePicker';
+import { getSettings } from '../../services/settingsStore';
 
 // ─── Smart Filters (identisch mit Rezepte-Screen) ────────────────────────────
 
@@ -98,11 +99,13 @@ export default function RecipePickScreen() {
   const [activeTab, setActiveTab] = useState('Alle');
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [portions, setPortions] = useState<Record<string, number>>({});
+  const [defaultPortions, setDefaultPortions] = useState(2);
 
   useFocusEffect(useCallback(() => {
-    Promise.all([getAllRecipes(), getCookCountsLastNDays(28)]).then(([r, c]) => {
+    Promise.all([getAllRecipes(), getCookCountsLastNDays(28), getSettings()]).then(([r, c, st]) => {
       setRecipes(r);
       setCookCounts(c);
+      setDefaultPortions(st.defaultPlannerPortions);
     });
     return () => { /* cleanup */ };
   }, []));
@@ -116,7 +119,7 @@ export default function RecipePickScreen() {
   }
 
   function handleSelect(recipe: Recipe) {
-    const pts = portions[recipe.id] ?? 1;
+    const pts = portions[recipe.id] ?? defaultPortions;
     completePick(recipe.id, pts);
     router.back();
   }
@@ -236,7 +239,7 @@ export default function RecipePickScreen() {
             <PickerCard
               recipe={r}
               cookCount={cookCounts[r.id] ?? 0}
-              portions={portions[r.id] ?? 1}
+              portions={portions[r.id] ?? defaultPortions}
               isGrid={isGrid}
               onPortionsChange={n => setPortions(prev => ({ ...prev, [r.id]: n }))}
               onSelect={() => handleSelect(r)}
@@ -275,8 +278,9 @@ const s = StyleSheet.create({
   card: { backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   cardSingle: { marginBottom: 10 },
   cardGrid: { flex: 1 },
-  // Foto: festes Seitenverhältnis statt fixer Höhe — passt sich Card-Breite an
-  cardThumb: { width: '100%', aspectRatio: 16 / 10 },
+  // Foto: fixe Höhe, damit Hochkant-Fotos das Layout nicht sprengen.
+  // resizeMode='cover' füllt den Rahmen ohne Verzerrung.
+  cardThumb: { width: '100%', height: 160 },
 
   gridRow: { gap: 12, paddingHorizontal: 8 },
   gridItem: { flex: 1, marginBottom: 12 },

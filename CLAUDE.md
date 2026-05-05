@@ -38,14 +38,14 @@ app/
     rezepte.tsx       # Rezeptliste: Suche, Kategorie-Filter, kcal-Badge
     planer.tsx        # Wochenplaner: 7 Tage, Mittag/Abend-Slots
     two.tsx           # Einkaufsliste (aus Wochenplan generiert)
-    einstellungen.tsx # Einstellungen: Nährwertziele, Browser-Import-Hinweis
+    einstellungen.tsx # Einstellungen: Tipps & Tricks, Wochenplaner-Defaults, Erinnerungen, Nährwertziele, Browser-Import-Hinweis
     _layout.tsx       # Tab-Navigation Konfiguration
   recipe/
-    [id].tsx          # Detailansicht: Zutaten, Nährwerte, Rating, Portionsskalierung
+    [id].tsx          # Detailansicht: Zutaten, Nährwerte, Rating, Portionsskalierung, Einzel-JSON-Export
     new.tsx           # Neues Rezept — liest optionalen ?importUrl= Query-Param
     edit/[id].tsx     # Rezept bearbeiten
     pick.tsx          # Modal: Rezept aus Liste auswählen (für Planer)
-  tools.tsx           # Export/Import JSON
+  tools.tsx           # Export/Import JSON (alle Rezepte)
   _layout.tsx         # Root-Layout: seedIfEmpty, patchBaselineIngredients, patchBaselinePhotos
 ```
 
@@ -53,12 +53,22 @@ app/
 
 | Datei | Zuständigkeit |
 |---|---|
-| `services/recipeStore.ts` | Rezept-CRUD (AsyncStorage), Foto-Handling, Seed, Migrationen |
+| `services/recipeStore.ts` | Rezept-CRUD (AsyncStorage), Foto-Handling, Seed, Migrationen, `exportSingleRecipeJSON()` |
 | `services/plannerStore.ts` | Wochenplan lesen/schreiben |
 | `services/shoppingList.ts` | Einkaufsliste aufbauen, `scaleAmount()`, `shoppingListToICS()` |
 | `services/nutritionGoals.ts` | Nährwertziele (Tagesziele, AsyncStorage) |
 | `services/recipePicker.ts` | Callback-Brücke Planer ↔ Picker-Modal |
-| `services/settingsStore.ts` | App-Einstellungen, Benachrichtigungen |
+| `services/settingsStore.ts` | App-Einstellungen, Benachrichtigungen, `defaultPlannerPortions` |
+| `services/tips.ts` | Zentrale Tipp-Liste (`TIPS`), `tipsFor(context)`, `allVisibleTips()`, plattform-Filter |
+
+### Komponenten
+
+| Datei | Zuständigkeit |
+|---|---|
+| `components/RecipeForm.tsx` | Formular für Erstellen/Bearbeiten + URL-/Vorlage-/JSON-Import |
+| `components/RecipeImage.tsx` | Bild mit Fallback auf `food-fallback.jpg` |
+| `components/TipButton.tsx` | `?`-Icon (`help-circle-outline`), öffnet `TipModal` für einen Kontext |
+| `components/TipModal.tsx` | Bottom-Sheet mit Tipps (Cream-Orange-Boxen) |
 
 ### Datenmodell (AsyncStorage-Key: `kochwelt_recipes`)
 
@@ -162,8 +172,27 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 ### Foto-Handling
 - Lokale Fotos: `FileSystem.documentDirectory + 'recipe_photos/' + recipeId + '.jpg'`
 - Baseline-Fotos: https-URLs aus `BASELINE_PHOTO_MAP`
+- Default-Foto für neue Rezepte: HTTPS-URL (Unsplash) → `RecipeForm.handleSave` ruft `saveRecipePhoto` **nur** für `file://`-URIs auf, sonst wird die URI direkt als `photo` übernommen. Wichtig: HTTPS-URL durch `copyAsync` würde sonst werfen und das Speichern komplett abbrechen.
 - `RecipeImage.tsx`: Fallback auf `assets/images/food-fallback.jpg`
 - Web: FileSystem nicht verfügbar → Foto-Upload deaktiviert
+- Listen-Cards (`rezepte.tsx`, `pick.tsx`) verwenden **fixe Höhe** (`height: 180` / `160`) statt `aspectRatio`, damit Hochkant-Fotos das Layout nicht sprengen.
+
+### Einzel-Rezept teilen — `app/recipe/[id].tsx`
+- Header-Icon `share-outline` → `handleShareRecipe()`: schreibt `Kochwelt-<slug>.json` ins Cache und ruft `Sharing.shareAsync` auf (Mail/AirDrop/Nachrichten/Dateien-App).
+- JSON kommt aus `exportSingleRecipeJSON(recipe)` (Array-Wrapper, Foto entfernt) — kompatibel mit `importRecipesJSON()`.
+- Web-Fallback: direkter Blob-Download.
+
+### Hilfe-/Tipp-System — `services/tips.ts` + `components/TipButton.tsx` + `components/TipModal.tsx`
+- Zentrale Liste in `TIPS[]` mit `id`, `context`, `icon`, `title`, `body`, optional `platform: 'ios' | 'android' | 'all'`.
+- `<TipButton context="..." />` rendert ein `?`-Icon (`help-circle-outline`); öffnet ein Bottom-Sheet-Modal mit allen Tipps für diesen Kontext (plattform-gefiltert). Komponente rendert `null`, wenn keine Tipps für Kontext + Plattform existieren.
+- Eingebaut in: RecipeForm (Zutaten + Zubereitung + Import-Box), Detail-Header, Rezeptlisten-Header, Planer-Header, Shopping-Header (beide Varianten).
+- Zentrale Übersicht in `einstellungen.tsx`: Sektion **„Tipps & Tricks"** ganz oben — gruppiert nach `CONTEXT_LABELS`, Aufklapp-Pattern (kein Modal-Overhead), nutzt `allVisibleTips()`.
+- Neue Tipps: nur Eintrag in `TIPS[]` ergänzen — kein UI-Code nötig.
+
+### Wochenplaner-Defaults — `services/settingsStore.ts`
+- `AppSettings.defaultPlannerPortions` (default `2`): Standard-Portionen, die beim Hinzufügen einer Mahlzeit zum Planer vorbelegt werden.
+- Ausgelesen in `app/recipe/pick.tsx` (Picker-Karte), `app/recipe/[id].tsx` (Zum-Planer-Modal), `app/(tabs)/planer.tsx` (Snack/Kalte-Küche-Modal).
+- `DEFAULT_SETTINGS.reminderFrequency` ist `'weekly'` — bei Bestandsdaten greift der Wert nur, wenn das Setting noch nie gespeichert wurde (Merge mit Stored-Settings in `getSettings()`).
 
 ### Wochenplan
 - Key-Format: `"YYYY-MM-DD"`

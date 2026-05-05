@@ -16,6 +16,7 @@ import {
   getNutritionGoals, saveNutritionGoals, DEFAULT_GOALS,
   type NutritionGoals, type MealSplits,
 } from '../../services/nutritionGoals';
+import { allVisibleTips, CONTEXT_LABELS, type Tip } from '../../services/tips';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ export default function EinstellungenScreen() {
   const [goals, setGoals] = useState<NutritionGoals>(DEFAULT_GOALS);
   const [dirty, setDirty] = useState(false);
   const [goalsDirty, setGoalsDirty] = useState(false);
+  const [expandedTip, setExpandedTip] = useState<string | null>(null);
 
   useFocusEffect(useCallback(() => {
     (async () => {
@@ -122,6 +124,49 @@ export default function EinstellungenScreen() {
         extraScrollHeight={Platform.OS === 'ios' ? 20 : 80}
         extraHeight={140}
       >
+
+        {/* ── Tipps & Tricks ── */}
+        <SectionHeader title="Tipps & Tricks" />
+        {(() => {
+          const tips = allVisibleTips();
+          const grouped = tips.reduce<Record<string, Tip[]>>((acc, tip) => {
+            (acc[tip.context] ??= []).push(tip);
+            return acc;
+          }, {});
+          const contextOrder = Object.keys(CONTEXT_LABELS).filter(c => grouped[c]?.length);
+          return contextOrder.map((ctx, gi) => (
+            <View key={ctx} style={{ marginBottom: 8 }}>
+              <Text style={s.tipGroupLabel}>{CONTEXT_LABELS[ctx]}</Text>
+              <SettingsCard>
+                {grouped[ctx].map((tip, i, arr) => {
+                  const isOpen = expandedTip === tip.id;
+                  return (
+                    <View key={tip.id} style={[!isOpen && i < arr.length - 1 && s.rowBorder]}>
+                      <TouchableOpacity
+                        style={s.tipRow}
+                        onPress={() => setExpandedTip(prev => prev === tip.id ? null : tip.id)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name={tip.icon as any} size={18} color="#f97316" style={s.rowIcon} />
+                        <Text style={s.tipRowLabel}>{tip.title}</Text>
+                        <Ionicons
+                          name={isOpen ? 'chevron-up' : 'chevron-down'}
+                          size={16}
+                          color="#a8a29e"
+                        />
+                      </TouchableOpacity>
+                      {isOpen && (
+                        <View style={[s.tipBodyWrap, i < arr.length - 1 && s.rowBorder]}>
+                          <Text style={s.tipBody}>{tip.body}</Text>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </SettingsCard>
+            </View>
+          ));
+        })()}
 
         {/* ── Browser-Import ── */}
         <SectionHeader title="Rezept aus Browser importieren" />
@@ -212,6 +257,30 @@ export default function EinstellungenScreen() {
               </Row>
             </>
           )}
+        </SettingsCard>
+
+        {/* ── Wochenplaner ── */}
+        <SectionHeader title="Wochenplaner" />
+        <SettingsCard>
+          <Row icon="people-outline" label="Standard-Portionen" last>
+            <View style={s.timeRow}>
+              <TouchableOpacity
+                style={s.timeBtn}
+                onPress={() => updateSettings({ defaultPlannerPortions: Math.max(1, settings.defaultPlannerPortions - 1) })}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="remove-circle-outline" size={22} color="#f97316" />
+              </TouchableOpacity>
+              <Text style={s.timeValue}>{settings.defaultPlannerPortions}</Text>
+              <TouchableOpacity
+                style={s.timeBtn}
+                onPress={() => updateSettings({ defaultPlannerPortions: Math.min(20, settings.defaultPlannerPortions + 1) })}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="add-circle-outline" size={22} color="#f97316" />
+              </TouchableOpacity>
+            </View>
+          </Row>
         </SettingsCard>
 
         {/* ── Ernährungsziele ── */}
@@ -368,4 +437,17 @@ const s = StyleSheet.create({
     backgroundColor: '#f97316', borderRadius: 16, paddingVertical: 16, marginTop: 8,
   },
   saveBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
+
+  tipGroupLabel: {
+    fontSize: 11, fontWeight: '600', color: '#a8a29e',
+    textTransform: 'uppercase', letterSpacing: 0.5,
+    marginLeft: 4, marginBottom: 4, marginTop: 4,
+  },
+  tipRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  tipRowLabel: { fontSize: 14, color: '#1c1917', fontWeight: '500', flex: 1 },
+  tipBodyWrap: { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 14, paddingLeft: 46 },
+  tipBody: { fontSize: 13, color: '#57534e', lineHeight: 19 },
 });

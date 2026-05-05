@@ -11,13 +11,15 @@ export interface AppSettings {
   reminderWeekday: number;  // 0=Sonntag … 6=Samstag (JS-Standard)
   reminderHour: number;
   reminderMinute: number;
+  defaultPlannerPortions: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  reminderFrequency: 'never',
+  reminderFrequency: 'weekly',
   reminderWeekday: 1,   // Montag
   reminderHour: 8,
   reminderMinute: 0,
+  defaultPlannerPortions: 2,
 };
 
 export const WEEKDAY_LABELS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];

@@ -1,14 +1,18 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Linking, Alert,
-  ActivityIndicator, StyleSheet, Modal, Pressable,
+  ActivityIndicator, StyleSheet, Modal, Pressable, Platform, Share,
 } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { RecipeImage } from '../../components/RecipeImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getRecipeById, deleteRecipe, buildTeaser, setRecipeRating, type Recipe } from '../../services/recipeStore';
+import { getRecipeById, deleteRecipe, buildTeaser, setRecipeRating, exportSingleRecipeJSON, type Recipe } from '../../services/recipeStore';
 import { scaleAmount } from '../../services/shoppingList';
+import { getSettings } from '../../services/settingsStore';
+import { TipButton } from '../../components/TipButton';
 import {
   getCookCountsLastNDays, getCookDatesForRecipe, setMeal, weekStart, addDays, toDateKey,
   WEEKDAYS, WEEKDAYS_LONG, type MealSlot,
@@ -43,16 +47,18 @@ export default function RecipeDetailScreen() {
   const [selectedDay, setSelectedDay] = useState(0); // 0–6, Mo–So
   const [selectedSlot, setSelectedSlot] = useState<MealSlot>('mittag');
   const [portions, setPortions] = useState(2);
+  const [defaultPortions, setDefaultPortions] = useState(2);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useFocusEffect(useCallback(() => {
     (async () => {
       setLoading(true);
-      const [r, counts] = await Promise.all([getRecipeById(id), getCookCountsLastNDays(28)]);
+      const [r, counts, st] = await Promise.all([getRecipeById(id), getCookCountsLastNDays(28), getSettings()]);
       setRecipe(r);
       setCookCount(counts[id] ?? 0);
       setScaledPortions(r?.portions ?? 1);
+      setDefaultPortions(st.defaultPlannerPortions);
       setLoading(false);
     })();
   }, [id]));
@@ -65,7 +71,7 @@ export default function RecipeDetailScreen() {
     setWeekOffset(0);
     setSelectedDay(dayIndex);
     setSelectedSlot('mittag');
-    setPortions(1);
+    setPortions(defaultPortions);
     setSaved(false);
     setModalVisible(true);
   }
@@ -105,6 +111,51 @@ export default function RecipeDetailScreen() {
     ]);
   }
 
+  function buildFilenameSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'rezept';
+  }
+
+  async function handleShareRecipe() {
+    if (!recipe) return;
+    const json = exportSingleRecipeJSON(recipe);
+    const filename = `Kochwelt-${buildFilenameSlug(recipe.title)}.json`;
+
+    if (Platform.OS === 'web') {
+      // Web: direkter Download via Blob-URL
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    try {
+      const path = FileSystem.cacheDirectory + filename;
+      await FileSystem.writeAsStringAsync(path, json, { encoding: 'utf8' as const });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(path, {
+          mimeType: 'application/json',
+          dialogTitle: `${recipe.title} teilen`,
+          UTI: 'public.json',
+        });
+      } else {
+        // Fallback: Klartext-Share, falls Sharing nicht verfügbar
+        await Share.share({ message: json, title: recipe.title });
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert('Teilen fehlgeschlagen', msg);
+    }
+  }
+
   // Label für den gewählten Tag im Modal
   const monday = weekStart(addDays(new Date(), weekOffset * 7));
   const modalDays = Array.from({ length: 7 }, (_, i) => {
@@ -117,11 +168,15 @@ export default function RecipeDetailScreen() {
       <Stack.Screen options={{
         title: '',
         headerRight: () => (
-          <View style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             <TouchableOpacity onPress={() => router.push(`/recipe/edit/${recipe.id}`)}>
               <Text style={{ color: '#f97316', fontWeight: '600' }}>Bearbeiten</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={confirmDelete}>
+            <TipButton context="recipe-detail" size={20} color="#f97316" />
+            <TouchableOpacity onPress={handleShareRecipe} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="share-outline" size={20} color="#f97316" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={confirmDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Ionicons name="trash-outline" size={20} color="#ef4444" />
             </TouchableOpacity>
           </View>

@@ -1,6 +1,6 @@
 # Kochwelt — Benutzerdokumentation
 
-**Version 1.1 · Stand April 2026**
+**Version 1.1 · Stand Mai 2026**
 
 ---
 
@@ -26,6 +26,8 @@
 ## 1. Überblick
 
 **Kochwelt** ist eine persönliche Rezept- und Meal-Planning-App für iOS und Android. Alle Daten werden ausschließlich lokal auf dem Gerät gespeichert — keine Cloud, keine Anmeldung.
+
+> **Tipp-Symbol** ❓: In den Headern der meisten Bildschirme und neben einzelnen Eingabefeldern findest du ein kleines Fragezeichen-Symbol. Antippen öffnet eine Übersicht der Funktionen, die in diesem Bereich oft übersehen werden. Eine Gesamtübersicht aller Tipps gibt es zusätzlich unter **Einstellungen → Tipps & Tricks**.
 
 **Die fünf Hauptbereiche der App:**
 
@@ -185,11 +187,15 @@ Auf Android erscheint Kochwelt im System-Share-Sheet. Tippe im Browser auf **Tei
 
 > **Hinweis:** Nicht alle Webseiten stellen strukturierte Rezeptdaten bereit. Wenn der Import keine Daten findet, erscheint eine Fehlermeldung — du kannst das Rezept dann manuell eingeben.
 
-### 3.5 Rezept bearbeiten und löschen
+### 3.5 Rezept bearbeiten, teilen und löschen
 
 Öffne das gewünschte Rezept und tippe oben rechts auf:
-- **Stift-Symbol** → Rezept bearbeiten
+- **Bearbeiten** → Rezept-Formular zum Anpassen
+- **Tipp-Symbol** ❓ → Tipps zur Detailansicht (Portions-Skalierung, Bewertung entfernen, Koch-Historie etc.)
+- **Teilen-Symbol** → Rezept als JSON-Datei verschicken (Mail-Anhang, Nachrichten, AirDrop, Dateien-App). Die Empfangsseite kann sie unter **Tools → Importieren** wieder einlesen — vorhandene Fotos bleiben dort erhalten, neue Rezepte werden hinzugefügt.
 - **Papierkorb-Symbol** → Rezept löschen (mit Bestätigungsdialog)
+
+> **Hinweis:** Beim Teilen wird der Datei-Name aus dem Rezeptnamen abgeleitet (z. B. `Kochwelt-spaghetti-bolognese.json`). Fotos werden nicht mitgeschickt — nur die Rezeptdaten.
 
 ---
 
@@ -252,8 +258,15 @@ Der **„Teilen"**-Button öffnet ein Auswahlmenü mit zwei Optionen:
 
 ## 6. Einstellungen
 
+### Tipps & Tricks
+Ganz oben findest du eine zentrale Sammlung aller Tipps der App, gruppiert nach Bereich (Rezept eingeben / importieren / Liste / Ansicht / Wochenplaner / Einkaufsliste). Tippe auf einen Tipp, um den vollständigen Text einzublenden. Plattform-spezifische Tipps werden automatisch gefiltert: iOS-Funktionen (z. B. Text-Scan in Eingabefeldern) tauchen auf Android oder im Web nicht auf.
+
+### Wochenplaner
+
+**Standard-Portionen** — Die Anzahl der Portionen, mit der eine Mahlzeit beim Hinzufügen zum Wochenplan vorbelegt ist. Default: **2**. Mit den Plus-/Minus-Knöpfen anpassbar (1–20). Wirkt im Rezept-Picker, im „Zum Planer"-Dialog der Detailansicht und im Snack-/Kalte-Küche-Dialog.
+
 ### Erinnerungen
-Wähle zwischen Nie / Wöchentlich / Täglich. Bei wöchentlich kann der Wochentag gewählt werden. Uhrzeit mit den Pfeilchen einstellen.
+Wähle zwischen Nie / Wöchentlich / Täglich. Default: **Wöchentlich** (Montag, 8:00). Bei wöchentlich kann der Wochentag gewählt werden. Uhrzeit mit den Pfeilchen einstellen.
 
 ### Nährwertziele
 Tägliche Ziele für Kalorien, Eiweiß, Kohlenhydrate, Fett. Die Mahlzeiten-Verteilung (% pro Mahlzeit) muss zusammen 100 % ergeben.
@@ -310,3 +323,9 @@ Nein, ohne Datensicherung nicht. Vollständige Wiederherstellung aller Basis-Rez
 
 **Kann ich ein Rezept mehrfach pro Tag einplanen?**
 Pro Tag und Slot (Mittag/Abend) jeweils ein Rezept. Für mehrere Rezepte an einem Tag beide Slots nutzen.
+
+**Wie tippe ich Zutaten oder Zubereitung schneller ein? (iOS)**
+In Multiline-Eingabefeldern (Zutaten, Zubereitung) erscheint beim **Doppel-Tippen** ein Auto-Fill-Menü mit der Option **„Text scannen"**. Damit öffnet sich die Kamera — du richtest sie auf eine Kochbuchseite oder einen Zettel, und der erkannte Text wird direkt in das Feld eingefügt. Spart viel Tipparbeit beim Übernehmen aus Büchern.
+
+**Wie schicke ich einem Freund ein einzelnes Rezept?**
+In der Rezept-Detailansicht oben rechts auf das Teilen-Symbol tippen → das Rezept wird als kompakte JSON-Datei (`Kochwelt-<titel>.json`) verpackt und kann per Mail, Nachrichten oder AirDrop verschickt werden. Auf dem Empfangsgerät: in Kochwelt unter **Rezepte → Tools → Importieren** die Datei auswählen.

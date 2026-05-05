@@ -18,6 +18,7 @@ import {
   buildShoppingList, shoppingListToText, shoppingListToICS, CATEGORY_ORDER,
   type ShoppingList, type ShoppingItem,
 } from '../../services/shoppingList';
+import { TipButton } from '../../components/TipButton';
 
 const CAT_ICONS: Record<string, string> = {
   'Gemüse & Obst': 'leaf-outline',
@@ -236,6 +237,7 @@ export default function ShoppingScreen() {
       <SafeAreaView style={s.screen} edges={['top']}>
         <View style={s.topBar}>
           <Text style={s.heading}>Einkaufsliste</Text>
+          <TipButton context="shopping" size={22} color="#78716c" />
         </View>
         <View style={s.empty}>
           <Ionicons name="cart-outline" size={56} color="#d6d3d1" />
@@ -262,7 +264,8 @@ export default function ShoppingScreen() {
             }
           </Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <TipButton context="shopping" size={22} color="#78716c" />
           {totalToBuy > 0 && checkedToBuy < totalToBuy && (
             <TouchableOpacity onPress={checkAll} style={s.iconBtn}>
               <Ionicons name="checkmark-done-outline" size={18} color="#f97316" />

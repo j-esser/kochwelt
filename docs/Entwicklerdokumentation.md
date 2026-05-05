@@ -1,6 +1,6 @@
 # Kochwelt — Entwicklerdokumentation
 
-**Version 1.1 · Stand April 2026**
+**Version 1.1 · Stand Mai 2026**
 
 ---
 
@@ -18,9 +18,10 @@
 10. [Basis-Rezepte & Migrations-System](#10-basis-rezepte--migrations-system)
 11. [Rezept-Import: URL, Deep Link, Clipboard](#11-rezept-import-url-deep-link-clipboard)
 12. [Einkaufsliste teilen (ICS / Text)](#12-einkaufsliste-teilen-ics--text)
-13. [Styling-Konventionen](#13-styling-konventionen)
-14. [Bekannte Einschränkungen & Plattform-Unterschiede](#14-bekannte-einschränkungen--plattform-unterschiede)
-15. [Roadmap & Erweiterungspunkte](#15-roadmap--erweiterungspunkte)
+13. [Foto-Layout in Listen-Cards](#13-foto-layout-in-listen-cards)
+14. [Styling-Konventionen](#14-styling-konventionen)
+15. [Bekannte Einschränkungen & Plattform-Unterschiede](#15-bekannte-einschränkungen--plattform-unterschiede)
+16. [Roadmap & Erweiterungspunkte](#16-roadmap--erweiterungspunkte)
 
 ---
 
@@ -68,16 +69,19 @@ kochwelt/
 │   └── _layout.tsx               # Root-Layout, App-Start-Logik
 │
 ├── services/
-│   ├── recipeStore.ts            # Rezept-CRUD, Migrationen, Foto-Handling
+│   ├── recipeStore.ts            # Rezept-CRUD, Migrationen, Foto-Handling, Einzel-Export
 │   ├── plannerStore.ts           # Wochenplan-Verwaltung
 │   ├── shoppingList.ts           # Einkaufslisten-Generator + ICS-Export
 │   ├── nutritionGoals.ts         # Nährwertziele
-│   ├── settingsStore.ts          # App-Einstellungen, Benachrichtigungen
-│   └── recipePicker.ts           # Callback-Brücke Planer ↔ Picker-Modal
+│   ├── settingsStore.ts          # App-Einstellungen, Benachrichtigungen, Planer-Default
+│   ├── recipePicker.ts           # Callback-Brücke Planer ↔ Picker-Modal
+│   └── tips.ts                   # Zentrale Tipp-Liste, plattform-Filter
 │
 ├── components/
 │   ├── RecipeForm.tsx             # Formular (Erstellen + Bearbeiten + Import)
-│   └── RecipeImage.tsx            # Bild-Komponente mit Fallback
+│   ├── RecipeImage.tsx            # Bild-Komponente mit Fallback
+│   ├── TipButton.tsx              # ?-Icon, öffnet TipModal für einen Kontext
+│   └── TipModal.tsx               # Bottom-Sheet mit Tipp-Liste
 │
 ├── constants/
 │   └── baselineRecipes.ts        # 40 Basis-Rezepte + Foto-Map
@@ -259,11 +263,14 @@ deleteRecipePhoto(recipeId: string): Promise<void>
 
 // Hilfsfunktionen
 buildTeaser(recipe: Recipe): RecipeTeaser    // { attrs, ingredients }
-exportRecipesJSON(): Promise<string>
+exportRecipesJSON(): Promise<string>          // Alle Rezepte (ohne Fotos)
+exportSingleRecipeJSON(recipe: Recipe): string // Einzel-Rezept als 1-elementiges Array (ohne Foto)
 importRecipesJSON(json: string): Promise<ImportResult>
 
 RECIPE_TABS: string[]
 ```
+
+**`exportSingleRecipeJSON`:** Synchroner Helper für die Einzel-Rezept-Teilen-Funktion in der Detailansicht. Gibt `[recipe]` als JSON zurück, damit der bestehende `importRecipesJSON()`-Pfad das Format ohne Sonderbehandlung lesen kann.
 
 ### `plannerStore.ts`
 
@@ -314,7 +321,17 @@ type MealType = 'frueh' | 'mittag' | 'abend' | 'sonst'
 ### `settingsStore.ts`
 
 ```typescript
-getSettings(): Promise<AppSettings>
+interface AppSettings {
+  reminderFrequency: 'never' | 'daily' | 'weekly';
+  reminderWeekday: number;        // 0=So … 6=Sa (JS-Standard)
+  reminderHour: number;
+  reminderMinute: number;
+  defaultPlannerPortions: number; // Default-Portionen beim Hinzufügen einer Mahlzeit zum Planer
+}
+
+DEFAULT_SETTINGS: AppSettings  // reminderFrequency: 'weekly', defaultPlannerPortions: 2
+
+getSettings(): Promise<AppSettings>          // Merge aus DEFAULT_SETTINGS + Stored
 saveSettings(settings: AppSettings): Promise<void>
 requestNotificationPermission(): Promise<boolean>
 scheduleReminder(settings: AppSettings): Promise<void>
@@ -322,7 +339,34 @@ cancelReminder(): Promise<void>
 WEEKDAY_LABELS: string[]
 ```
 
-> Wochentag-Offset: JS nutzt 0=Sonntag, expo-notifications nutzt 1=Sonntag → intern +1 beim Scheduling.
+> **Defaults bei Bestandsdaten:** `getSettings()` mergt mit `DEFAULT_SETTINGS`, also bekommen ältere Installationen automatisch `defaultPlannerPortions: 2`. Der neue `'weekly'`-Default greift nur, wenn die Settings noch nie gespeichert wurden.
+
+> **Wochentag-Offset:** JS nutzt 0=Sonntag, expo-notifications nutzt 1=Sonntag → intern +1 beim Scheduling.
+
+> **`defaultPlannerPortions` wird ausgelesen in:** `app/recipe/pick.tsx` (Picker-Karten), `app/recipe/[id].tsx` (Zum-Planer-Modal), `app/(tabs)/planer.tsx` (Snack/Kalte-Küche-Modal).
+
+### `tips.ts`
+
+```typescript
+type TipPlatform = 'all' | 'ios' | 'android';
+
+interface Tip {
+  id: string;
+  context: string;        // 'recipe-form-text' | 'recipe-form-import' | 'recipes' |
+                          // 'recipe-detail' | 'planner' | 'shopping'
+  icon: string;           // Ionicons-Name
+  title: string;
+  body: string;
+  platform?: TipPlatform; // default 'all'
+}
+
+TIPS: Tip[]                              // Zentrale Tipp-Liste — neue Tipps hier ergänzen
+tipsFor(context: string): Tip[]          // Plattform-gefiltert
+allVisibleTips(): Tip[]                  // Alle für aktuelle Plattform sichtbaren
+CONTEXT_LABELS: Record<string, string>   // 'recipe-form-text' → 'Rezept eingeben' usw.
+```
+
+Plattform-Filter: `Platform.OS === 'ios' ? 'ios' : 'android'`. Web verhält sich wie Android (alle nicht-iOS-Tipps werden gezeigt; iOS-only-Tipps fallen weg).
 
 ### `recipePicker.ts`
 
@@ -355,7 +399,19 @@ const factor = scaledPortions / (recipe.portions || 1);
 const display = factor === 1 ? ing.amount : scaleAmount(ing.amount, factor);
 ```
 
-**Planer-Integration:** FAB „Zum Planer" öffnet Modal → `setMeal(dateKey, slot, {recipeId, portions})`.
+**Planer-Integration:** FAB „Zum Planer" öffnet Modal → `setMeal(dateKey, slot, {recipeId, portions})`. Initial-Portions kommen aus `getSettings().defaultPlannerPortions`.
+
+**Einzel-Rezept-Teilen:** Header-Icon `share-outline` → `handleShareRecipe()`:
+
+```typescript
+const json = exportSingleRecipeJSON(recipe);            // Array-Wrapper, ohne photo
+const filename = `Kochwelt-${slug(recipe.title)}.json`;  // ä→ae, Sonderzeichen zu '-'
+// Native: cache-Datei schreiben + Sharing.shareAsync (mimeType 'application/json', UTI 'public.json')
+// Web: Blob-URL + automatischer <a download>-Click
+// Fallback (Sharing nicht verfügbar): Share.share({ message: json })
+```
+
+Slug-Funktion ist lokal in der Datei, bewusst klein gehalten (60 Zeichen Cap, fallback `'rezept'`).
 
 ### `app/(tabs)/two.tsx` — Einkaufsliste
 
@@ -372,9 +428,14 @@ await Sharing.shareAsync(path, { mimeType: 'text/calendar', UTI: 'public.calenda
 
 ### `app/(tabs)/einstellungen.tsx`
 
-Zeigt platform-spezifische Import-Hinweise:
-- iOS: Clipboard-Flow erklärt + Hinweis auf geplante Share Extension
-- Android: „Teilen → Kochwelt" direkt möglich
+Sektionen (von oben nach unten):
+
+1. **Tipps & Tricks** — gruppiert via `CONTEXT_LABELS`, nutzt `allVisibleTips()`. State `expandedTip: string | null` steuert das Aufklappen einzelner Zeilen.
+2. **Rezept aus Browser importieren** — platform-spezifische Hinweise (iOS Clipboard-Flow / Android Share Sheet).
+3. **Erinnerungen** — Häufigkeit (Nie / Wöchentlich / Täglich), Wochentag, Uhrzeit. Default `weekly`.
+4. **Wochenplaner** — `defaultPlannerPortions` (1–20).
+5. **Ernährungs- & Kalorienziele** — kcal/Protein/Kohlenhydrate/Fett.
+6. **Mahlzeit-Verteilung** — Splits (frueh/mittag/abend/sonst), Summe muss 100 % ergeben.
 
 ---
 
@@ -424,6 +485,37 @@ const url = urlOverride ?? urlInput.trim();
 **Tastatur-Behandlung** (Lib `react-native-keyboard-aware-scroll-view`):
 - `KeyboardAwareScrollView` statt `ScrollView`
 - Auf Multiline-Inputs (Zutaten, Zubereitung): Refs + `onContentSizeChange` + `onFocus` rufen `scrollToFocusedInput(node, 120, 0)` — KAS scrollt sonst nicht beim Wachsen des Cursors
+
+### `TipButton.tsx` + `TipModal.tsx`
+
+```typescript
+// TipButton
+interface Props {
+  context: string;
+  size?: number;       // default 20
+  color?: string;      // default '#a8a29e'
+  style?: StyleProp<ViewStyle>;
+  title?: string;      // override für Modal-Titel; default CONTEXT_LABELS[context]
+}
+```
+
+`<TipButton context="recipe-form-text" />` lädt `tipsFor(context)`. Sind keine Tipps vorhanden (Kontext leer oder alle plattform-fremd), rendert die Komponente `null` — kein Layout-Aufwand bei den Aufrufstellen.
+
+`TipModal` ist ein Bottom-Sheet im Stil des bestehenden Vorlage-Modals (weißer Hintergrund, abgerundete obere Ecken, Backdrop `rgba(0,0,0,0.35)`, max. 85 % Höhe). Tipp-Karten verwenden den Cream-Orange-Stil (`#fff7ed`/`#fed7aa`) wie der Browser-Import-Hinweis in Einstellungen.
+
+**Aufrufstellen:**
+
+| Stelle | Context |
+|---|---|
+| `RecipeForm.tsx` neben Label „Zutaten" | `recipe-form-text` |
+| `RecipeForm.tsx` neben Label „Zubereitung" | `recipe-form-text` |
+| `RecipeForm.tsx` in Header der „Rezept importieren"-Box | `recipe-form-import` |
+| `app/recipe/[id].tsx` Header (zwischen Bearbeiten und Teilen) | `recipe-detail` |
+| `app/(tabs)/rezepte.tsx` Header (`navActions`) | `recipes` |
+| `app/(tabs)/planer.tsx` Header | `planner` |
+| `app/(tabs)/two.tsx` Header (beide Varianten: empty + with-content) | `shopping` |
+
+Zentrale Übersicht in `einstellungen.tsx`: nutzt `allVisibleTips()` und gruppiert via `CONTEXT_LABELS`. Aufklapp-Pattern (kein Modal) durch State `expandedTip: string | null`.
 
 ### `app/(tabs)/planer.tsx` — Tagesziel-Berechnung
 
@@ -555,7 +647,24 @@ END:VCALENDAR
 
 ---
 
-## 13. Styling-Konventionen
+## 13. Foto-Layout in Listen-Cards
+
+Die Listen-Cards in `app/(tabs)/rezepte.tsx` und `app/recipe/pick.tsx` verwenden **fixe Pixel-Höhe** für `cardThumb`, **nicht** `aspectRatio`:
+
+```typescript
+// rezepte.tsx
+cardThumb: { width: '100%', height: 180 },
+// pick.tsx
+cardThumb: { width: '100%', height: 160 },
+```
+
+Hintergrund: `aspectRatio` mit `width: '100%'` greift bei Image-Komponenten in React Native nicht zuverlässig — bei Hochkant-Fotos (typisch von der Handy-Kamera) kann das Bild seine natürliche Höhe behalten und das Card-Layout sprengen. Eine fixe Höhe ist deterministisch: `RecipeImage` nutzt `resizeMode='cover'`, dadurch füllt das Bild den Rahmen ohne Verzerrung — der Bildausschnitt wird beschnitten, das Format bleibt stabil.
+
+Detailansicht (`heroImage`) und Home-Featured-Card folgen demselben Prinzip (fixe Höhe bzw. `absoluteFill` in einem Container mit fixer Höhe).
+
+---
+
+## 14. Styling-Konventionen
 
 ### Farbpalette
 
@@ -576,7 +685,7 @@ END:VCALENDAR
 
 ---
 
-## 14. Bekannte Einschränkungen & Plattform-Unterschiede
+## 15. Bekannte Einschränkungen & Plattform-Unterschiede
 
 | Feature | iOS | Android | Web |
 |---|---|---|---|
@@ -590,7 +699,7 @@ END:VCALENDAR
 
 ---
 
-## 15. Roadmap & Erweiterungspunkte
+## 16. Roadmap & Erweiterungspunkte
 
 ### iOS Share Extension (Priorität: hoch)
 

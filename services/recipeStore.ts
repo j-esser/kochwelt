@@ -209,6 +209,13 @@ export async function exportRecipesJSON(): Promise<string> {
   return JSON.stringify(clean, null, 2);
 }
 
+/** Gibt ein einzelnes Rezept als JSON-Array-String zurück (ohne Foto-Pfad).
+ *  Format ist mit `importRecipesJSON` und dem JSON-Import im Formular kompatibel. */
+export function exportSingleRecipeJSON(recipe: Recipe): string {
+  const { photo: _photo, ...clean } = recipe;
+  return JSON.stringify([clean], null, 2);
+}
+
 export interface ImportResult {
   updated: number;
   added: number;

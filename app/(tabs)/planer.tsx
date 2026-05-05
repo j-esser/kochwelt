@@ -17,6 +17,8 @@ import {
   type NutritionGoals, type MealSplits, type MealType,
 } from '../../services/nutritionGoals';
 import { registerPickCallback } from '../../services/recipePicker';
+import { getSettings } from '../../services/settingsStore';
+import { TipButton } from '../../components/TipButton';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -314,6 +316,7 @@ export default function PlanerScreen() {
   const [weekPlan, setWeekPlan] = useState<WeekPlan>({});
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [goals, setGoals] = useState<NutritionGoals>(DEFAULT_GOALS);
+  const [defaultPortions, setDefaultPortions] = useState(2);
 
   // Kalte Küche / Snack Modal
   const [coldTarget, setColdTarget] = useState<{ date: string; slot: MealSlot } | null>(null);
@@ -363,7 +366,7 @@ export default function PlanerScreen() {
   async function handleSaveColdMeal() {
     if (!coldTarget) return;
     const meal: PlannedMeal = {
-      portions: 1,
+      portions: defaultPortions,
       manualTitle: coldTitle.trim() || (isSnack ? 'Snack' : 'Kalte Küche'),
       manualNutrition: {
         kcal: parseInt(coldKcal) || 0,
@@ -392,14 +395,16 @@ export default function PlanerScreen() {
   useFocusEffect(useCallback(() => {
     (async () => {
       await seedIfEmpty();
-      const [recipes, plan, loadedGoals] = await Promise.all([
+      const [recipes, plan, loadedGoals, st] = await Promise.all([
         getAllRecipes(),
         getWeekPlan(),
         getNutritionGoals(),
+        getSettings(),
       ]);
       setAllRecipes(recipes);
       setWeekPlan(plan);
       setGoals(loadedGoals);
+      setDefaultPortions(st.defaultPlannerPortions);
     })();
   }, [weekOffset]));
 
@@ -437,10 +442,13 @@ export default function PlanerScreen() {
       {/* Header */}
       <View style={ss.topBar}>
         <Text style={ss.heading}>Wochenplaner</Text>
-        <TouchableOpacity style={ss.goalsBtn} onPress={() => router.push('/(tabs)/einstellungen')}>
-          <Ionicons name="nutrition-outline" size={15} color="#f97316" />
-          <Text style={ss.goalsBtnText}>Ziele</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <TipButton context="planner" size={22} color="#78716c" />
+          <TouchableOpacity style={ss.goalsBtn} onPress={() => router.push('/(tabs)/einstellungen')}>
+            <Ionicons name="nutrition-outline" size={15} color="#f97316" />
+            <Text style={ss.goalsBtnText}>Ziele</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Woche navigieren */}
