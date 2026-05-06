@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Kochwelt 1.4.0 — Was ist neu</title>
+  <style>
+    body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1c1917; line-height: 1.55; max-width: 720px; margin: 24px; }
+    h1 { color: #c2410c; font-size: 28pt; margin-bottom: 4px; }
+    h2 { color: #f97316; font-size: 18pt; margin-top: 28px; border-bottom: 2px solid #fed7aa; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-top: 18px; margin-bottom: 4px; color: #1c1917; }
+    p.tagline { color: #78716c; font-size: 12pt; margin-top: 0; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    .highlight { background: #fff7ed; padding: 12px 16px; border-left: 3px solid #f97316; border-radius: 4px; margin: 12px 0; }
+    .muted { color: #78716c; font-size: 11pt; }
+    .ask { background: #f0f9ff; padding: 12px 16px; border-left: 3px solid #0ea5e9; border-radius: 4px; margin: 12px 0; }
+  </style>
+</head>
+<body>
+
+<h1>Kochwelt 1.4.0</h1>
+<p class="tagline">Persönliche Rezeptverwaltung &amp; Wochenplaner — Update Mai 2026</p>
+
+<p>Liebe Tester,</p>
+
+<p>1.4.0 ist ein kleines, aber praktisches Update: die Zutaten-Datenbank, die seit
+1.3.0 die smarte Erkennung, Nährwert-Berechnung und Einkaufslisten-Aggregation
+antreibt, kann jetzt <strong>im Hintergrund aktualisiert werden — ohne dass
+ihr eine neue App-Version installieren müsst</strong>. Wenn ich also einen
+fehlenden Alias bemerke („Erdnussöl" matched nicht auf „Olivenöl") oder eine
+falsche Nährwert-Angabe finde, kann ich das fixen, und ihr habt es beim
+nächsten App-Start automatisch.</p>
+
+<h2>Was ist neu in 1.4.0</h2>
+
+<h3>Live-Updates für die Zutaten-Datenbank</h3>
+<p>Beim App-Start prüft die App im Hintergrund (max. einmal alle 6 Stunden), ob
+eine neuere Version der Zutaten-Liste verfügbar ist. Wenn ja: still herunterladen,
+in den Cache legen, fertig. Kein UI-Pop-up, keine Wartezeit beim Start.</p>
+
+<p>Den Status seht ihr unter <strong>Einstellungen → Zutaten-Datenbank</strong>:
+aktuelle Version, Datum, Anzahl der Zutaten, Zeitstempel des letzten Checks.
+Mit dem Button <em>„Jetzt aktualisieren"</em> könnt ihr sofort prüfen lassen.</p>
+
+<h3>Garantien für eure Daten</h3>
+<p>Beim Update kann <strong>nichts</strong> verloren gehen:</p>
+<ul>
+  <li><strong>Eigene Zutaten</strong> (die ihr beim Speichern eines Rezepts mit
+  unbekannter Zutat angelegt habt) bleiben unangetastet — niemals gelöscht,
+  niemals überschrieben.</li>
+  <li><strong>Eure Rezepte</strong> bleiben wie sie sind. Bestehende
+  Zutaten-Zuordnungen, Nährwerte und Mengen werden durch das Update nicht
+  verändert.</li>
+  <li><strong>Bei Netzwerk-Fehlern</strong> bleibt die zuletzt erfolgreich
+  geladene Version aktiv.</li>
+  <li><strong>Bei unbekanntem Schema</strong> (zukünftige Format-Änderung)
+  wird das Update verworfen — ihr seht weiterhin die App-eigene Liste.</li>
+</ul>
+
+<h2>Funktions-Übersicht</h2>
+
+<h3>Home</h3>
+<ul>
+  <li>Persönliche Begrüßung &amp; Wochenstatistik (geplante Mahlzeiten, Tage)</li>
+  <li>Rezept-des-Tages-Vorschlag</li>
+</ul>
+
+<h3>Rezepte</h3>
+<ul>
+  <li>40 Basis-Rezepte beim ersten Start (mit aus den Zutaten berechneten Nährwerten)</li>
+  <li>Suche mit Tippfehler-Toleranz (Titel, Zutaten, Beschreibung, Kategorie)</li>
+  <li>Kategorie-Tabs (Pasta, Reis, Curry, Suppe, Fisch, Fleisch, Vegetarisch, Salat, Eintopf)</li>
+  <li>Smart-Filter: Schnell, Einfach, High-Protein, Low-Carb, Low-Kalorie</li>
+  <li>Detail-Ansicht mit Live-Portionsskalierung der Zutaten</li>
+  <li>Persönliche Bewertung (1–5 Sterne)</li>
+  <li>Foto pro Rezept (Kamera oder Galerie)</li>
+  <li>Smarte Zutaten-Erkennung mit ✅/⚠️-Chips im Formular</li>
+  <li>„Aus Zutaten berechnen"-Button für Nährwerte</li>
+  <li>Mehrzeiliges Zutaten-Format wird automatisch erkannt</li>
+  <li>Browser-Import via URL, Clipboard-Erkennung, Android-Share-Sheet</li>
+  <li>Vorlage-Modal mit Beispiel-Vorlage und „Aus Rezept duplizieren"</li>
+  <li>Einzel-Rezept als JSON-Datei teilen</li>
+</ul>
+
+<h3>Wochenplaner</h3>
+<ul>
+  <li>7 Tage je Mittag + Abend, plus beliebig viele Snacks</li>
+  <li>Rezept-Picker mit Tippfehler-toleranter Suche</li>
+  <li>Kalte Küche &amp; Snacks mit Mahlzeit-Typ-Vorbelegung</li>
+  <li>Tagesziel-Fortschrittsbalken (Kalorien, Eiweiß, Kohlenhydrate, Fett)</li>
+  <li>Wochen-Navigation vor und zurück</li>
+  <li>Standard-Portionen einstellbar</li>
+</ul>
+
+<h3>Shopping / Einkaufsliste</h3>
+<ul>
+  <li>Aggregation per Zutaten-ID — gleiche Zutat aus mehreren Rezepten landet in einer Zeile</li>
+  <li>Einheiten-Konvertierung: „2 EL" + „100 ml" + „1 Schuss" werden in Milliliter zusammengeführt</li>
+  <li>Automatisch aus dem Wochenplan generiert (inkl. Snacks)</li>
+  <li>Tagesauswahl — nur die Tage anzeigen, die du einkaufen willst</li>
+  <li>Kategorien-Sortierung (Gemüse &amp; Obst, Fleisch &amp; Fisch, Mopro …)</li>
+  <li>Mengen-Detail in Klammern: „600 g Tomaten (200 g + 400 g)"</li>
+  <li>„Vorhanden"-Markierung — Artikel aus dem Vorrat ausblenden</li>
+  <li>Teilen als Text (WhatsApp, Mail) oder als <strong>.ics-Erinnerung</strong> für die iOS Reminders-App</li>
+</ul>
+
+<h3>Einstellungen</h3>
+<ul>
+  <li>Sektion „Tipps &amp; Tricks" mit allen Hinweisen, gruppiert nach Bereich</li>
+  <li>Wochenplaner-Defaults (Standard-Portionen)</li>
+  <li>Tageszielen für Kalorien, Eiweiß, Kohlenhydrate, Fett</li>
+  <li>Mahlzeit-Verteilung in % (Frühstück / Mittag / Abend / Snacks)</li>
+  <li>Erinnerungen (Wöchentlich oder Täglich, frei wählbare Uhrzeit)</li>
+  <li>Hinweise zum Browser-Import</li>
+  <li><strong>Neu:</strong> Sektion „Zutaten-Datenbank" mit Sync-Status und Refresh-Button</li>
+</ul>
+
+<h2>Was ihr gerne testen dürft</h2>
+
+<div class="highlight">
+<ul>
+  <li><strong>Sync-Status anschauen</strong>: <em>Einstellungen → Zutaten-Datenbank</em> →
+  ihr solltet Version, Datum und Anzahl Zutaten sehen, plus den Zeitstempel
+  des letzten Sync-Checks. Wirken die Anzeigen verständlich?</li>
+  <li><strong>„Jetzt aktualisieren"</strong> tippen — beim ersten Mal werden ggf.
+  ein paar Zutaten geladen, danach sollte „Schon aktuell" erscheinen. Funktioniert
+  zügig?</li>
+  <li><strong>Offline-Verhalten</strong>: WLAN am iPhone aus, App neu starten —
+  alles funktioniert weiter (auf den lokalen Cache fallback). „Jetzt aktualisieren"
+  zeigt einen freundlichen Fehler.</li>
+  <li><strong>Bestehende eigene Daten</strong>: Falls ihr eigene Zutaten oder
+  Rezepte habt — sind die nach dem Update noch da, unverändert? (Sollten sie
+  alle sein. Wenn nicht: bitte sofort melden.)</li>
+</ul>
+</div>
+
+<h2>Bekannte Einschränkungen</h2>
+<ul>
+  <li>Die Sync-Prüfung läuft nur beim App-<strong>Start</strong>. Wenn die App
+  länger im Hintergrund war und ihr sie nur kurz öffnet, kann es bis zu 6 Stunden
+  dauern, bis automatisch neu geprüft wird. Über den Refresh-Button geht's
+  jederzeit sofort.</li>
+  <li>Eigene Zutaten werden weiterhin nur lokal auf dem Gerät gespeichert — sie
+  wandern noch nicht zwischen euren Geräten oder in die zentrale Datenbank.</li>
+</ul>
+
+<h2>Feedback &amp; Bugs</h2>
+
+<div class="ask">
+<p>Wenn euch etwas auffällt — Bugs, Verständnisprobleme, fehlende Funktionen oder einfach nur ein
+„das hat mir gut gefallen" — schreibt mir gerne direkt zurück. Diesmal besonders
+spannend: Findet ihr Zutaten in euren Rezepten, die als <em>unbekannt</em>
+markiert werden, obwohl sie eigentlich offensichtlich sind? Eine Liste solcher
+Beispiele hilft mir riesig — die wandern dann in die Datenbank und kommen über
+den neuen Sync-Mechanismus zu allen anderen.</p>
+</div>
+
+<p class="muted">Vielen Dank fürs Testen!<br>
+Jürgen</p>
+
+</body>
+</html>

@@ -260,7 +260,7 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 - Beim App-Start (`app/_layout.tsx`): `syncBaselineIfNeeded()` als fire-and-forget. Skippt wenn `Date.now() - fetchedAt < 6h`. Sendet `If-None-Match: <etag>` → bei `304` nur `fetchedAt` aktualisieren.
 - Manuell in Einstellungen: Sektion „Zutaten-Datenbank" → Button „Jetzt aktualisieren" → Alert mit Ergebnis.
 
-**Konfiguration**: `BASELINE_GIST_URL` in `services/baselineSync.ts`. Solange leer, läuft der Sync gar nicht (returns `{kind: 'disabled'}`). Sobald gesetzt, geht's los.
+**Konfiguration**: `BASELINE_GIST_URL` zeigt seit 1.4.0 auf einen öffentlichen Gist (`gist.github.com/j-esser/1f71eb989c5e7d2c189cf6bdb8255583`, Datei `baseline.json`). Wenn der Sync-Mechanismus für ein anderes Repo wiederverwendet werden soll, hier die Raw-URL eintragen.
 
 **Schutz vor Datenverlust**: Sync schreibt ausschließlich in den Remote-Cache (`kochwelt_baseline_remote` + `_meta`). Weder `kochwelt_user_ingredients` noch `kochwelt_recipes` werden angefasst.
 
@@ -288,7 +288,7 @@ Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `
 - ⏳ Nährwert-Statistiken (Charts)
 - ⏳ Push-Erinnerungen (Kochen-Erinnerung)
 - ⏳ Cloud-Sync (Supabase)
-- ✅ Phase 4 Ingredient-Baseline: Gist-Sync (in 1.4.0). Code ist fertig, fehlt nur die `BASELINE_GIST_URL` in `services/baselineSync.ts`
+- ✅ Phase 4 Ingredient-Baseline: Gist-Sync aktiv seit 1.4.0. Pflege-Workflow: `npx tsx scripts/exportBaselineForGist.ts <version>` → Inhalt in den Gist pasten → User bekommen es beim nächsten Cold-Start.
 
 ---
 
