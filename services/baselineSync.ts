@@ -8,7 +8,7 @@ import type { BaselineIngredient } from '../constants/ingredientBaseline';
 // Bei Updates des Gists: `version` im JSON inkrementieren — App holt sich beim
 // nächsten Start automatisch die neue Liste.
 //
-export const BASELINE_GIST_URL = '';
+export const BASELINE_GIST_URL = 'https://gist.githubusercontent.com/j-esser/1f71eb989c5e7d2c189cf6bdb8255583/raw/baseline.json';
 
 // Schemaversion der App. Wenn das Gist-JSON eine andere Schemaversion hat,
 // wird das Update verworfen (Schutz vor inkompatiblen Format-Änderungen).
