@@ -277,7 +277,7 @@ Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `
 ## Bekannte Einschränkungen
 
 - Expo Go inkompatibel mit iOS 26+ → iOS Simulator (Xcode) nutzen
-- Kein Cloud-Sync — alle Daten lokal in AsyncStorage
+- User-Daten (Rezepte, Wochenplan, eigene Zutaten) nur lokal in AsyncStorage. Nur die Baseline-Zutaten-Liste wird via Gist read-only synchronisiert.
 - iOS Share Extension (direkter Safari-Share-Sheet-Eintrag) noch nicht implementiert
 
 ---
@@ -287,8 +287,7 @@ Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `
 - ⏳ iOS Share Extension (nativer Share-Sheet-Eintrag in Safari)
 - ⏳ Nährwert-Statistiken (Charts)
 - ⏳ Push-Erinnerungen (Kochen-Erinnerung)
-- ⏳ Cloud-Sync (Supabase)
-- ✅ Phase 4 Ingredient-Baseline: Gist-Sync aktiv seit 1.4.0. Pflege-Workflow: `npx tsx scripts/exportBaselineForGist.ts <version>` → Inhalt in den Gist pasten → User bekommen es beim nächsten Cold-Start.
+- ⏳ Cloud-Sync für User-Rezepte und eigene Zutaten (Supabase)
 
 ---
 
