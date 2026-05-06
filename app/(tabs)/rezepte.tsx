@@ -11,6 +11,7 @@ import {
   type Recipe,
 } from '../../services/recipeStore';
 import { TipButton } from '../../components/TipButton';
+import { GiftBanner } from '../../components/GiftBanner';
 
 // ─── Smart Filters ────────────────────────────────────────────────────────────
 
@@ -310,7 +311,10 @@ export default function RezepteScreen() {
             </View>
           )}
           ListHeaderComponent={
-            <Text style={styles.count}>{filtered.length} Rezept{filtered.length !== 1 ? 'e' : ''}</Text>
+            <>
+              <GiftBanner />
+              <Text style={styles.count}>{filtered.length} Rezept{filtered.length !== 1 ? 'e' : ''}</Text>
+            </>
           }
           ListEmptyComponent={
             <View style={styles.center}>

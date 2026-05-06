@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   StyleSheet, Alert, Platform, Switch,
+  Linking, FlatList, Modal, Pressable,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +22,11 @@ import {
   getBaselineSyncStatus, syncBaselineNow, BASELINE_GIST_URL,
   type BaselineSyncStatus, type SyncResult,
 } from '../../services/baselineSync';
+import {
+  getGiftSyncStatus, syncGiftsNow, isGiftsEnabled, setGiftsEnabled,
+  buildSubmissionUrl, GIFT_GIST_URL, type GiftSyncStatus,
+} from '../../services/giftRecipes';
+import { getAllRecipes, type Recipe } from '../../services/recipeStore';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -58,17 +64,62 @@ export default function EinstellungenScreen() {
   const [expandedTip, setExpandedTip] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<BaselineSyncStatus | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [giftStatus, setGiftStatus] = useState<GiftSyncStatus | null>(null);
+  const [giftSyncing, setGiftSyncing] = useState(false);
+  const [submitPickerOpen, setSubmitPickerOpen] = useState(false);
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 
   useFocusEffect(useCallback(() => {
     (async () => {
-      const [s, g, sync] = await Promise.all([getSettings(), getNutritionGoals(), getBaselineSyncStatus()]);
+      const [s, g, sync, gift] = await Promise.all([
+        getSettings(), getNutritionGoals(), getBaselineSyncStatus(), getGiftSyncStatus(),
+      ]);
       setSettings(s);
       setGoals(g);
       setSyncStatus(sync);
+      setGiftStatus(gift);
       setDirty(false);
       setGoalsDirty(false);
     })();
   }, []));
+
+  async function handleGiftToggle(enabled: boolean) {
+    await setGiftsEnabled(enabled);
+    setGiftStatus(await getGiftSyncStatus());
+  }
+
+  async function handleGiftSync() {
+    if (giftSyncing) return;
+    setGiftSyncing(true);
+    const result = await syncGiftsNow();
+    setGiftStatus(await getGiftSyncStatus());
+    setGiftSyncing(false);
+    const msg =
+      result.kind === 'updated'   ? `Aktualisiert auf Version ${result.version}\n${result.giftCount} Geschenke verfügbar.` :
+      result.kind === 'unchanged' ? 'Schon aktuell.' :
+      result.kind === 'disabled'  ? 'Sync ist nicht konfiguriert.' :
+      result.kind === 'error'     ? `Fehler: ${result.message}` :
+      'Sync übersprungen.';
+    Alert.alert('Geschenk-Rezepte', msg);
+  }
+
+  async function openSubmissionPicker() {
+    const recipes = await getAllRecipes();
+    setAllRecipes(recipes);
+    setSubmitPickerOpen(true);
+  }
+
+  async function submitRecipe(recipe: Recipe) {
+    setSubmitPickerOpen(false);
+    const url = buildSubmissionUrl(recipe);
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) await Linking.openURL(url);
+      else Alert.alert('Fehler', 'GitHub konnte nicht geöffnet werden.');
+    } catch {
+      Alert.alert('Fehler', 'Browser konnte nicht geöffnet werden.');
+    }
+  }
 
   async function handleBaselineSync() {
     if (syncing) return;
@@ -408,6 +459,99 @@ export default function EinstellungenScreen() {
             </Text>
           </TouchableOpacity>
         </SettingsCard>
+
+        {/* ── Geschenk-Rezepte ── */}
+        <SectionHeader title="Geschenk-Rezepte" />
+        <SettingsCard>
+          <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 }}>
+            <Text style={{ fontSize: 13, color: '#57534e', lineHeight: 19 }}>
+              Ab und zu wandert ein neues Rezept in deine Sammlung — als kleines
+              Geschenk. Ein Banner in der Rezepte-Liste weist dich darauf hin.
+              Du kannst das jederzeit deaktivieren.
+            </Text>
+          </View>
+          <Row icon="gift-outline" label="Geschenke empfangen">
+            <Switch
+              value={giftStatus?.enabled ?? true}
+              onValueChange={handleGiftToggle}
+              trackColor={{ false: '#e7e5e4', true: '#fdba74' }}
+              thumbColor="#f97316"
+            />
+          </Row>
+          <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+            {!GIFT_GIST_URL ? (
+              <Text style={{ fontSize: 12, color: '#a8a29e', fontStyle: 'italic' }}>
+                Sync ist noch nicht konfiguriert.
+              </Text>
+            ) : !giftStatus?.hasCache ? (
+              <Text style={{ fontSize: 12, color: '#a8a29e' }}>
+                Noch nicht synchronisiert.
+              </Text>
+            ) : (
+              <View style={{ gap: 4 }}>
+                <Text style={{ fontSize: 13, color: '#1c1917' }}>
+                  Version {giftStatus.version}{giftStatus.updatedAt ? ` · ${giftStatus.updatedAt}` : ''}
+                </Text>
+                <Text style={{ fontSize: 12, color: '#78716c' }}>
+                  {giftStatus.giftCount} Geschenke insgesamt · {giftStatus.deliveredCount} bereits erhalten
+                  {giftStatus.unreadCount > 0 ? ` · ${giftStatus.unreadCount} ungelesen` : ''}
+                </Text>
+              </View>
+            )}
+          </View>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, marginHorizontal: 16, marginBottom: 8, backgroundColor: giftSyncing ? '#fed7aa' : '#fff7ed', borderRadius: 10, borderWidth: 1, borderColor: '#fed7aa' }}
+            onPress={handleGiftSync}
+            disabled={giftSyncing}
+          >
+            <Ionicons name={giftSyncing ? 'sync-outline' : 'cloud-download-outline'} size={16} color="#f97316" />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#f97316' }}>
+              {giftSyncing ? 'Wird synchronisiert…' : 'Auf neue Geschenke prüfen'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, marginHorizontal: 16, marginBottom: 16, backgroundColor: '#1c1917', borderRadius: 10 }}
+            onPress={openSubmissionPicker}
+          >
+            <Ionicons name="paper-plane-outline" size={16} color="#ffffff" />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#ffffff' }}>
+              Eigenes Rezept einsenden
+            </Text>
+          </TouchableOpacity>
+        </SettingsCard>
+
+        {/* Submission Picker Modal */}
+        <Modal visible={submitPickerOpen} animationType="slide" transparent onRequestClose={() => setSubmitPickerOpen(false)}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={() => setSubmitPickerOpen(false)} />
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#ffffff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 8, maxHeight: '70%' }}>
+            <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: '#d6d3d1', marginBottom: 8 }} />
+            <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: '#1c1917' }}>Welches Rezept einsenden?</Text>
+              <Text style={{ fontSize: 12, color: '#78716c', marginTop: 4 }}>
+                Öffnet GitHub mit deinem Rezept als JSON. Wenn es gut passt, kommt es als Geschenk-Rezept zu allen anderen.
+              </Text>
+            </View>
+            <FlatList
+              data={allRecipes}
+              keyExtractor={r => r.id}
+              ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: '#f5f5f4', marginLeft: 20 }} />}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 }}
+                  onPress={() => submitRecipe(item)}
+                >
+                  <Text style={{ flex: 1, fontSize: 15, color: '#1c1917' }} numberOfLines={1}>{item.title}</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#a8a29e" />
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ paddingHorizontal: 20, paddingVertical: 24, color: '#a8a29e', textAlign: 'center' }}>
+                  Du hast noch keine Rezepte.
+                </Text>
+              }
+            />
+          </View>
+        </Modal>
 
         {/* Speichern */}
         {(dirty || goalsDirty) && (
