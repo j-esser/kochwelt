@@ -61,7 +61,8 @@ app/
 | `services/settingsStore.ts` | App-Einstellungen, Benachrichtigungen, `defaultPlannerPortions` |
 | `services/tips.ts` | Zentrale Tipp-Liste (`TIPS`), `tipsFor(context)`, `allVisibleTips()`, plattform-Filter |
 | `services/ingredientBaseline.ts` | Parser, Matcher, Nährwert-Berechnung, Mengen-Konvertierung (`parseIngredientText`, `findBaselineMatch`, `matchIngredient`, `resolveAmountInBase`, `formatBaseAmount`, `calcNutritionFromMatches`, `calcNutritionFromIngredients`) |
-| `services/userIngredients.ts` | Persistenz für Nutzer-eigene Zutaten (`loadBaseline()`, `addUserIngredients()`) — merged Bundle-Baseline + AsyncStorage |
+| `services/userIngredients.ts` | Persistenz für Nutzer-eigene Zutaten (`loadBaseline()`, `addUserIngredients()`) — merged Remote-Cache (falls vorhanden) ODER Bundle + AsyncStorage |
+| `services/baselineSync.ts` | Gist-Sync für die Zutaten-Baseline. `syncBaselineIfNeeded()` (TTL 6h, fire-and-forget), `syncBaselineNow()` (manuell), `getCachedRemoteBaseline()`, `getBaselineSyncStatus()` |
 
 ### Komponenten
 
@@ -239,9 +240,34 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 - Fuse-Index per `useMemo([recipes])` — wird nicht bei jedem Render neu gebaut
 - Suchergebnisse werden als `Set<id>` über das bestehende Filter-Pipeline (Tab → Search → Smart Filter) gelegt
 
+### Baseline-Sync (Phase 4) — `services/baselineSync.ts`
+**Idee**: Die Zutaten-Baseline lebt zusätzlich im GitHub-Gist. Damit lassen sich Korrekturen / neue Aliase / Nährwert-Anpassungen ausrollen, **ohne** ein App-Release zu machen. Die App lädt beim Start im Hintergrund (max. einmal alle 6h) das Gist und vergleicht die `version`-Zahl im JSON mit dem Cache.
+
+**Datenquellen-Hierarchie in `loadBaseline()`** (`services/userIngredients.ts`):
+1. **Remote-Cache** (`getCachedRemoteBaseline()`) — wenn vorhanden, ersetzt das Bundle vollständig
+2. **Bundle** (`bundledBaseline()`) — Fallback bei Erstinstallation oder Offline-Failure
+3. **User-Einträge** (`loadUserIngredients()`) — werden NIEMALS modifiziert oder gelöscht, immer on-top gemerged
+
+**Gist-Format** (`scripts/baseline-gist.json`):
+```json
+{ "schemaVersion": 1, "version": 7, "updatedAt": "2026-05-07", "ingredients": [...] }
+```
+- `schemaVersion`: aktuell `1`. Bei Format-Änderungen erhöhen — App verwirft Update bei Mismatch.
+- `version`: integer, MUSS bei jedem Gist-Edit inkrementiert werden, sonst greift kein Update.
+- `updatedAt`: rein informativ, in Settings angezeigt.
+
+**Sync-Trigger**:
+- Beim App-Start (`app/_layout.tsx`): `syncBaselineIfNeeded()` als fire-and-forget. Skippt wenn `Date.now() - fetchedAt < 6h`. Sendet `If-None-Match: <etag>` → bei `304` nur `fetchedAt` aktualisieren.
+- Manuell in Einstellungen: Sektion „Zutaten-Datenbank" → Button „Jetzt aktualisieren" → Alert mit Ergebnis.
+
+**Konfiguration**: `BASELINE_GIST_URL` in `services/baselineSync.ts`. Solange leer, läuft der Sync gar nicht (returns `{kind: 'disabled'}`). Sobald gesetzt, geht's los.
+
+**Schutz vor Datenverlust**: Sync schreibt ausschließlich in den Remote-Cache (`kochwelt_baseline_remote` + `_meta`). Weder `kochwelt_user_ingredients` noch `kochwelt_recipes` werden angefasst.
+
 ### Scripts (`scripts/`)
 - `auditBaselineIngredients.ts`: prüft Match-Quote der Baseline-Rezepte gegen Baseline-Zutaten, generiert Markdown-Report `scripts/baseline-audit.md`. Aktuell 100 % (438/438).
 - `calcBaselineNutrition.ts`: berechnet Nährwerte für alle 40 Baseline-Rezepte aus den Zutaten (`parseIngredientText` + `calcNutritionFromMatches`) und schreibt sie direkt in `constants/baselineRecipes.ts` zurück. Beim Erhöhen von `INGREDIENTS_VERSION` migriert die App alle bestehenden User-Stände.
+- `exportBaselineForGist.ts`: erzeugt `scripts/baseline-gist.json` aus `BASELINE_INGREDIENTS` für den Gist-Upload. Aufruf: `npx tsx scripts/exportBaselineForGist.ts <version>` — Version IMMER inkrementieren.
 - `parserSmokeTest.ts`: ad-hoc-Tests für `parseIngredientText`/`findBaselineMatch`.
 
 Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `moduleResolution: "bundler"`).
@@ -262,7 +288,7 @@ Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `
 - ⏳ Nährwert-Statistiken (Charts)
 - ⏳ Push-Erinnerungen (Kochen-Erinnerung)
 - ⏳ Cloud-Sync (Supabase)
-- ⏳ Phase 4 Ingredient-Baseline: Gist-Sync für Baseline-Updates ohne App-Release; Settings-UI zum manuellen Aktualisieren der Baseline
+- ✅ Phase 4 Ingredient-Baseline: Gist-Sync (in 1.4.0). Code ist fertig, fehlt nur die `BASELINE_GIST_URL` in `services/baselineSync.ts`
 
 ---
 

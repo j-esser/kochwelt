@@ -17,6 +17,10 @@ import {
   type NutritionGoals, type MealSplits,
 } from '../../services/nutritionGoals';
 import { allVisibleTips, CONTEXT_LABELS, type Tip } from '../../services/tips';
+import {
+  getBaselineSyncStatus, syncBaselineNow, BASELINE_GIST_URL,
+  type BaselineSyncStatus, type SyncResult,
+} from '../../services/baselineSync';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,16 +56,35 @@ export default function EinstellungenScreen() {
   const [dirty, setDirty] = useState(false);
   const [goalsDirty, setGoalsDirty] = useState(false);
   const [expandedTip, setExpandedTip] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<BaselineSyncStatus | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useFocusEffect(useCallback(() => {
     (async () => {
-      const [s, g] = await Promise.all([getSettings(), getNutritionGoals()]);
+      const [s, g, sync] = await Promise.all([getSettings(), getNutritionGoals(), getBaselineSyncStatus()]);
       setSettings(s);
       setGoals(g);
+      setSyncStatus(sync);
       setDirty(false);
       setGoalsDirty(false);
     })();
   }, []));
+
+  async function handleBaselineSync() {
+    if (syncing) return;
+    setSyncing(true);
+    const result: SyncResult = await syncBaselineNow();
+    const fresh = await getBaselineSyncStatus();
+    setSyncStatus(fresh);
+    setSyncing(false);
+    const msg =
+      result.kind === 'updated'   ? `Aktualisiert auf Version ${result.version}\n${result.ingredientCount} Zutaten geladen.` :
+      result.kind === 'unchanged' ? 'Schon aktuell — keine neue Version verfügbar.' :
+      result.kind === 'disabled'  ? 'Sync ist nicht konfiguriert (Gist-URL fehlt).' :
+      result.kind === 'error'     ? `Fehler: ${result.message}` :
+      'Sync übersprungen.';
+    Alert.alert('Zutaten-Datenbank', msg);
+  }
 
   function updateSettings(patch: Partial<AppSettings>) {
     setSettings(prev => prev ? { ...prev, ...patch } : prev);
@@ -340,6 +363,50 @@ export default function EinstellungenScreen() {
               Gesamt: {splitsTotal}% {splitsTotal === 100 ? '✓' : '— muss 100% ergeben'}
             </Text>
           </View>
+        </SettingsCard>
+
+        {/* ── Zutaten-Datenbank ── */}
+        <SectionHeader title="Zutaten-Datenbank" />
+        <SettingsCard>
+          <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 }}>
+            <Text style={{ fontSize: 13, color: '#57534e', lineHeight: 19 }}>
+              Die Zutaten-Datenbank wird im Hintergrund automatisch aktualisiert
+              (max. einmal alle 6 Stunden). Hier kannst du sofort prüfen, ob
+              eine neuere Version vorliegt — eigene Einträge bleiben dabei
+              unverändert.
+            </Text>
+          </View>
+          <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+            {!BASELINE_GIST_URL ? (
+              <Text style={{ fontSize: 12, color: '#a8a29e', fontStyle: 'italic' }}>
+                Sync ist noch nicht konfiguriert.
+              </Text>
+            ) : !syncStatus?.hasCache ? (
+              <Text style={{ fontSize: 12, color: '#a8a29e' }}>
+                Noch nicht synchronisiert — Standard-Liste der App ist aktiv.
+              </Text>
+            ) : (
+              <View style={{ gap: 4 }}>
+                <Text style={{ fontSize: 13, color: '#1c1917' }}>
+                  Version {syncStatus.version}{syncStatus.updatedAt ? ` · ${syncStatus.updatedAt}` : ''}
+                </Text>
+                <Text style={{ fontSize: 12, color: '#78716c' }}>
+                  {syncStatus.ingredientCount} Zutaten · zuletzt geprüft{' '}
+                  {syncStatus.fetchedAt ? new Date(syncStatus.fetchedAt).toLocaleString('de-DE') : '—'}
+                </Text>
+              </View>
+            )}
+          </View>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, marginHorizontal: 16, marginBottom: 16, backgroundColor: syncing ? '#fed7aa' : '#fff7ed', borderRadius: 10, borderWidth: 1, borderColor: '#fed7aa' }}
+            onPress={handleBaselineSync}
+            disabled={syncing}
+          >
+            <Ionicons name={syncing ? 'sync-outline' : 'cloud-download-outline'} size={16} color="#f97316" />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#f97316' }}>
+              {syncing ? 'Wird synchronisiert…' : 'Jetzt aktualisieren'}
+            </Text>
+          </TouchableOpacity>
         </SettingsCard>
 
         {/* Speichern */}

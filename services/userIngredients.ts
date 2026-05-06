@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BaselineIngredient } from '@/constants/ingredientBaseline';
 import { bundledBaseline } from './ingredientBaseline';
+import { getCachedRemoteBaseline } from './baselineSync';
 
 const USER_INGREDIENTS_KEY = 'kochwelt_user_ingredients';
 
@@ -27,8 +28,12 @@ export async function addUserIngredients(newItems: UserIngredient[]): Promise<vo
 }
 
 export async function loadBaseline(): Promise<BaselineIngredient[]> {
+  // Datenquellen-Hierarchie: Remote-Cache (falls vorhanden) → Bundle → User-Einträge.
+  // User-Einträge werden NIEMALS überschrieben oder gelöscht, nur ergänzt.
+  const remote = await getCachedRemoteBaseline();
+  const baseline = remote ?? bundledBaseline();
   const user = await loadUserIngredients();
-  const map = new Map<string, BaselineIngredient>(bundledBaseline().map(b => [b.id, b]));
+  const map = new Map<string, BaselineIngredient>(baseline.map(b => [b.id, b]));
   for (const u of user) map.set(u.id, u);
   return Array.from(map.values());
 }
