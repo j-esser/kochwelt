@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import Fuse from 'fuse.js';
 import {
   View, Text, TextInput, FlatList, ScrollView,
   TouchableOpacity, StyleSheet, useWindowDimensions,
@@ -129,6 +130,18 @@ export default function RecipePickScreen() {
     router.back();
   }
 
+  const fuse = useMemo(() => new Fuse(recipes, {
+    keys: [
+      { name: 'title', weight: 3 },
+      { name: 'ingredients.name', weight: 2 },
+      { name: 'description', weight: 1 },
+      { name: 'categories', weight: 1 },
+    ],
+    threshold: 0.35,
+    ignoreLocation: true,
+    minMatchCharLength: 2,
+  }), [recipes]);
+
   let filtered = recipes;
   if (activeTab === 'Ohne Kategorie') {
     filtered = filtered.filter(r => !r.categories || r.categories.length === 0);
@@ -136,13 +149,8 @@ export default function RecipePickScreen() {
     filtered = filtered.filter(r => r.categories.includes(activeTab));
   }
   if (search.trim()) {
-    const q = search.toLowerCase();
-    filtered = filtered.filter(r =>
-      r.title.toLowerCase().includes(q) ||
-      r.description.toLowerCase().includes(q) ||
-      r.ingredients.some(i => i.name.toLowerCase().includes(q)) ||
-      r.categories.some(c => c.toLowerCase().includes(q))
-    );
+    const hits = new Set(fuse.search(search.trim()).map(r => r.item.id));
+    filtered = filtered.filter(r => hits.has(r.id));
   }
   for (const id of activeFilters) {
     const f = SMART_FILTERS.find(f => f.id === id);

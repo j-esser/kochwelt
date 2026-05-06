@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { BASELINE_RECIPES, BASELINE_PHOTO_MAP } from '../constants/baselineRecipes';
+import { BASELINE_INGREDIENTS } from '../constants/ingredientBaseline';
+import { matchIngredient } from './ingredientBaseline';
 
 // ─── Photo file helpers ───────────────────────────────────────────────────────
 
@@ -26,6 +28,9 @@ export interface Ingredient {
   name: string;
   amount: string;
   shopCategory: string;
+  baselineId?: string;
+  parsedQuantity?: number;
+  parsedUnit?: string;
 }
 
 export interface Nutrition {
@@ -102,7 +107,7 @@ export async function patchBaselinePhotos(): Promise<void> {
 }
 
 // Versionsnummer – erhöhen erzwingt Neu-Import der Zutaten aller Baseline-Rezepte
-const INGREDIENTS_VERSION = '2';
+const INGREDIENTS_VERSION = '5';
 const INGREDIENTS_VERSION_KEY = 'kochwelt_ingredients_version';
 
 // Aktualisiert Zutaten aller Baseline-Rezepte aus BASELINE_RECIPES (versioniert)
@@ -118,7 +123,21 @@ export async function patchBaselineIngredients(): Promise<void> {
     const base = baselineById.get(r.id);
     if (!base) return r; // Nutzer-eigenes Rezept — nicht anfassen
     changed = true;
-    return { ...r, ingredients: base.ingredients, portions: base.portions };
+    // Zutaten anreichern: baselineId/parsedQuantity/parsedUnit über den Parser setzen,
+    // damit Einkaufsliste & Nährwert-Berechnung baseline-bewusst aggregieren können.
+    const enriched = base.ingredients.map(ing => {
+      const line = [ing.amount, ing.name].filter(Boolean).join(' ');
+      const m = matchIngredient(line, BASELINE_INGREDIENTS);
+      return {
+        ...ing,
+        baselineId: m.baselineId,
+        parsedQuantity: m.quantity,
+        parsedUnit: m.unit,
+        // shopCategory bei Match aus der Baseline übernehmen (konsistente Kategorisierung)
+        shopCategory: m.baseline?.category ?? ing.shopCategory,
+      };
+    });
+    return { ...r, ingredients: enriched, portions: base.portions, nutrition: base.nutrition };
   });
 
   if (changed) await saveAll(patched);

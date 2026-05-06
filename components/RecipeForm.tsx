@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Alert,
   ActivityIndicator, Image, Platform, Modal, Pressable,
@@ -11,8 +11,13 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
+import Fuse from 'fuse.js';
 import { saveRecipe, saveRecipePhoto, createId, getAllRecipes, type Recipe, type Ingredient } from '../services/recipeStore';
+import { matchIngredient, calcNutritionFromIngredients, parseIngredientText } from '../services/ingredientBaseline';
+import { loadBaseline, addUserIngredients } from '../services/userIngredients';
+import type { BaselineIngredient } from '../constants/ingredientBaseline';
 import { TipButton } from './TipButton';
+import { UnknownIngredientsModal, UnknownInput } from './UnknownIngredientsModal';
 
 const RECIPE_TABS = [
   'Pasta', 'Reis', 'Curry', 'Suppe', 'Fisch', 'Fleisch', 'Vegetarisch', 'Salat', 'Eintopf',
@@ -130,6 +135,14 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
   const [templateMode, setTemplateMode] = useState<'choose' | 'pickRecipe'>('choose');
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [recipeSearch, setRecipeSearch] = useState('');
+
+  // Ingredient-Baseline state
+  const [baseline, setBaseline] = useState<BaselineIngredient[]>([]);
+  const [showUnknownModal, setShowUnknownModal] = useState(false);
+
+  useEffect(() => {
+    loadBaseline().then(setBaseline);
+  }, []);
 
   // Refs für Auto-Scroll bei wachsenden Multiline-Feldern
   const scrollRef = useRef<KeyboardAwareScrollView>(null);
@@ -332,16 +345,85 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
     );
   }
 
-  function parseIngredients(text: string): Ingredient[] {
-    return text.split('\n')
-      .map(line => line.trim())
-      .filter(Boolean)
-      .map(line => {
-        const m = line.match(/^([\d.,½¼¾⅓⅔]+\s*(?:g|kg|ml|l|EL|TL|Esslöffel|Teelöffel|Prise|Bund|Dose|Stück|Scheibe|Zehe|Tasse|Packung|Päckchen)?)\s+(.+)$/i);
-        if (m) return { amount: m[1].trim(), name: m[2].trim(), shopCategory: classifyIngredient(m[2]) };
-        return { amount: '', name: line, shopCategory: classifyIngredient(line) };
-      });
+  function formatQty(q: number): string {
+    return Number.isInteger(q) ? String(q) : String(Math.round(q * 100) / 100);
   }
+
+  function buildIngredient(line: string, base: BaselineIngredient[]): Ingredient {
+    const m = matchIngredient(line, base);
+    const amount = m.quantity != null
+      ? `${formatQty(m.quantity)}${m.unit ? ' ' + m.unit : ''}`
+      : '';
+    const name = m.rawName || line;
+    const shopCategory = m.baseline?.category ?? classifyIngredient(name || line);
+    return {
+      name,
+      amount,
+      shopCategory,
+      baselineId: m.baselineId,
+      parsedQuantity: m.quantity,
+      parsedUnit: m.unit,
+    };
+  }
+
+  function parseIngredients(text: string, base: BaselineIngredient[] = baseline): Ingredient[] {
+    const raw = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const isAnnotation = (l: string) => /^à/i.test(l);
+    const isQuantityOnly = (l: string) => {
+      const m = parseIngredientText(l);
+      return m.quantity != null && !m.rawName;
+    };
+    // Mehrzeiliges Format erkennen: mind. eine reine Mengenzeile vorhanden?
+    const isMultiLine = raw.some(isQuantityOnly);
+    if (!isMultiLine) return raw.map(line => buildIngredient(line, base));
+
+    const lines: string[] = [];
+    let i = 0;
+    while (i < raw.length) {
+      const line = raw[i];
+      if (isAnnotation(line)) { i++; continue; }
+      if (isQuantityOnly(line)) {
+        // Reine Mengenzeile → mit der nächsten Nicht-Anmerkungs-Zeile zusammenführen
+        let j = i + 1;
+        while (j < raw.length && isAnnotation(raw[j])) j++;
+        if (j < raw.length) {
+          lines.push(`${line} ${raw[j]}`);
+          i = j + 1;
+          // Beschreibungszeilen nach der Zutat überspringen
+          // Heuristik: Zeilen die mit Kleinbuchstabe beginnen = Modifikator/Anmerkung
+          while (i < raw.length && /^[a-zäöüß]/.test(raw[i])) i++;
+          continue;
+        }
+      }
+      lines.push(line);
+      i++;
+    }
+    return lines.map(line => buildIngredient(line, base));
+  }
+
+  const parsedItems = useMemo(
+    () => parseIngredients(ingredientsText, baseline),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ingredientsText, baseline],
+  );
+
+  const unknownItems = useMemo(
+    () => parsedItems
+      .map((ing, idx) => ({ ing, line: ingredientsText.split('\n').map(l => l.trim()).filter(Boolean)[idx] }))
+      .filter(({ ing }) => !ing.baselineId),
+    [parsedItems, ingredientsText],
+  );
+
+  const templateSearchResults = useMemo(() => {
+    const q = recipeSearch.trim();
+    if (!q) return allRecipes;
+    return new Fuse(allRecipes, {
+      keys: ['title'],
+      threshold: 0.35,
+      ignoreLocation: true,
+      minMatchCharLength: 2,
+    }).search(q).map(r => r.item);
+  }, [allRecipes, recipeSearch]);
 
   async function pickPhoto(source: 'camera' | 'library') {
     const perm = source === 'camera'
@@ -372,16 +454,9 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
     ]);
   }
 
-  async function handleSave() {
-    if (!recipeTitle.trim()) {
-      Alert.alert('Titel fehlt', 'Bitte einen Titel eingeben.');
-      return;
-    }
+  async function persistRecipe(currentBaseline: BaselineIngredient[]) {
     const id = initial?.id ?? createId();
     let savedPhoto: string | undefined = undefined;
-    // Nur lokale file://-URIs werden ins Foto-Verzeichnis kopiert.
-    // HTTPS-URLs (DEFAULT_PHOTO, Baseline-Fotos) werden direkt übernommen —
-    // copyAsync würde sonst werfen und das Speichern komplett abbrechen.
     if (photoUri && photoUri.startsWith('file://') && photoUri !== initial?.photo) {
       savedPhoto = await saveRecipePhoto(id, photoUri);
     } else if (photoUri) {
@@ -395,7 +470,7 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
       cookTime: parseInt(cookTime) || 40,
       portions: parseInt(portions) || 2,
       reference: reference.trim(),
-      ingredients: parseIngredients(ingredientsText),
+      ingredients: parseIngredients(ingredientsText, currentBaseline),
       nutrition: {
         kcal: kcal ? parseInt(kcal) : null,
         protein: protein ? parseInt(protein) : null,
@@ -406,6 +481,32 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
     };
     await saveRecipe(recipe);
     router.back();
+  }
+
+  async function handleSave() {
+    if (!recipeTitle.trim()) {
+      Alert.alert('Titel fehlt', 'Bitte einen Titel eingeben.');
+      return;
+    }
+    if (unknownItems.length > 0) {
+      setShowUnknownModal(true);
+      return;
+    }
+    await persistRecipe(baseline);
+  }
+
+  async function handleUnknownSubmit(created: BaselineIngredient[]) {
+    setShowUnknownModal(false);
+    await addUserIngredients(created);
+    const merged = [...baseline];
+    const idx = new Map(merged.map((b, i) => [b.id, i]));
+    for (const c of created) {
+      const i = idx.get(c.id);
+      if (i != null) merged[i] = c;
+      else merged.push(c);
+    }
+    setBaseline(merged);
+    await persistRecipe(merged);
   }
 
   // Zeige Lade-Overlay wenn Auto-Import (via Deep Link) gerade läuft
@@ -477,7 +578,7 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
                 />
                 <TouchableOpacity
                   style={{ marginTop: 8, backgroundColor: importing ? '#fed7aa' : '#f97316', borderRadius: 10, paddingVertical: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
-                  onPress={handleUrlImport}
+                  onPress={() => handleUrlImport()}
                   disabled={importing}
                 >
                   {importing
@@ -581,6 +682,32 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
             </View>
           ))}
         </View>
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 6, marginBottom: 16, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa' }}
+          onPress={() => {
+            const n = calcNutritionFromIngredients(parsedItems, baseline);
+            const covered = parsedItems.length - n.skippedCount;
+            Alert.alert(
+              'Aus Zutaten berechnen',
+              `Kcal: ${n.kcal} | Eiweiß: ${n.protein} g | Fett: ${n.fat} g | KH: ${n.carbs} g\n(${covered}/${parsedItems.length} Zutaten erkannt)`,
+              [
+                { text: 'Abbrechen', style: 'cancel' },
+                {
+                  text: 'Übernehmen',
+                  onPress: () => {
+                    setKcal(String(n.kcal));
+                    setProtein(String(n.protein));
+                    setFat(String(n.fat));
+                    setCarbs(String(n.carbs));
+                  },
+                },
+              ],
+            );
+          }}
+        >
+          <Ionicons name="calculator-outline" size={14} color="#f97316" />
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#f97316' }}>Aus Zutaten berechnen</Text>
+        </TouchableOpacity>
 
         {/* Zutaten */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -591,7 +718,7 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         </View>
         <TextInput
           ref={ingredientsRef}
-          className="bg-white border border-stone-200 rounded-xl px-4 py-3 text-stone-800 mb-4"
+          className="bg-white border border-stone-200 rounded-xl px-4 py-3 text-stone-800 mb-2"
           multiline
           numberOfLines={8}
           textAlignVertical="top"
@@ -602,6 +729,55 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
           placeholder={"400 g Spaghetti\n150 g Speck\n4 Eier"}
           placeholderTextColor="#a8a29e"
         />
+
+        {parsedItems.length > 0 && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {parsedItems.map((ing, idx) => {
+              const matched = !!ing.baselineId;
+              return (
+                <View
+                  key={idx}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 999,
+                    backgroundColor: matched ? '#dcfce7' : '#fef3c7',
+                    borderWidth: 1,
+                    borderColor: matched ? '#86efac' : '#fcd34d',
+                  }}
+                >
+                  <Ionicons
+                    name={matched ? 'checkmark-circle' : 'warning'}
+                    size={11}
+                    color={matched ? '#16a34a' : '#d97706'}
+                  />
+                  <Text style={{ fontSize: 11, color: matched ? '#166534' : '#92400e' }}>
+                    {ing.name || '(leer)'}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {unknownItems.length > 0 && (
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', gap: 8,
+            backgroundColor: '#fff7ed', borderRadius: 10,
+            borderWidth: 1, borderColor: '#fed7aa',
+            paddingHorizontal: 10, paddingVertical: 8, marginBottom: 12,
+          }}>
+            <Ionicons name="information-circle" size={16} color="#c2410c" />
+            <Text style={{ flex: 1, fontSize: 12, color: '#9a3412', lineHeight: 16 }}>
+              {unknownItems.length === 1
+                ? '1 Zutat ist noch nicht in der Baseline — beim Speichern bestätigen.'
+                : `${unknownItems.length} Zutaten sind noch nicht in der Baseline — beim Speichern bestätigen.`}
+            </Text>
+          </View>
+        )}
 
         {/* Zubereitung */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -736,9 +912,7 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
 
               <FlatList
                 style={{ maxHeight: 380 }}
-                data={allRecipes.filter(r =>
-                  r.title.toLowerCase().includes(recipeSearch.trim().toLowerCase())
-                )}
+                data={templateSearchResults}
                 keyExtractor={r => r.id}
                 ItemSeparatorComponent={() => <View style={tm.listDivider} />}
                 renderItem={({ item }) => (
@@ -758,6 +932,17 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
           )}
         </View>
       </Modal>
+
+      <UnknownIngredientsModal
+        visible={showUnknownModal}
+        unknowns={unknownItems.map<UnknownInput>(({ ing, line }) => ({
+          rawName: ing.name || line || '',
+          quantity: ing.parsedQuantity,
+          unit: ing.parsedUnit,
+        }))}
+        onCancel={() => setShowUnknownModal(false)}
+        onSubmit={handleUnknownSubmit}
+      />
     </>
   );
 }

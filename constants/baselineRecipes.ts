@@ -139,10 +139,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 620,
-      "protein": 16,
-      "fat": 42,
-      "carbs": 42
+      "kcal": 2176,
+      "protein": 34,
+      "fat": 124,
+      "carbs": 240
     }
   },
   {
@@ -268,10 +268,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 680,
-      "protein": 14,
-      "fat": 28,
-      "carbs": 90
+      "kcal": 2121,
+      "protein": 43,
+      "fat": 136,
+      "carbs": 214
     }
   },
   {
@@ -317,10 +317,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 380,
-      "protein": 9,
-      "fat": 8,
-      "carbs": 65
+      "kcal": 643,
+      "protein": 32,
+      "fat": 6,
+      "carbs": 132
     }
   },
   {
@@ -391,10 +391,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 520,
-      "protein": 16,
-      "fat": 30,
-      "carbs": 46
+      "kcal": 1145,
+      "protein": 30,
+      "fat": 93,
+      "carbs": 53
     }
   },
   {
@@ -455,10 +455,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 420,
-      "protein": 18,
-      "fat": 14,
-      "carbs": 52
+      "kcal": 789,
+      "protein": 36,
+      "fat": 35,
+      "carbs": 89
     }
   },
   {
@@ -559,10 +559,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 390,
-      "protein": 11,
-      "fat": 10,
-      "carbs": 62
+      "kcal": 545,
+      "protein": 23,
+      "fat": 3,
+      "carbs": 103
     }
   },
   {
@@ -653,10 +653,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 650,
-      "protein": 12,
-      "fat": 32,
-      "carbs": 80
+      "kcal": 1511,
+      "protein": 27,
+      "fat": 136,
+      "carbs": 73
     }
   },
   {
@@ -727,10 +727,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 480,
-      "protein": 14,
-      "fat": 28,
-      "carbs": 42
+      "kcal": 953,
+      "protein": 43,
+      "fat": 78,
+      "carbs": 28
     }
   },
   {
@@ -801,10 +801,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 540,
-      "protein": 10,
-      "fat": 34,
-      "carbs": 48
+      "kcal": 720,
+      "protein": 16,
+      "fat": 36,
+      "carbs": 85
     }
   },
   {
@@ -880,10 +880,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 560,
-      "protein": 8,
-      "fat": 18,
-      "carbs": 88
+      "kcal": 530,
+      "protein": 17,
+      "fat": 2,
+      "carbs": 114
     }
   },
   {
@@ -969,10 +969,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 360,
-      "protein": 10,
-      "fat": 14,
-      "carbs": 48
+      "kcal": 470,
+      "protein": 20,
+      "fat": 13,
+      "carbs": 77
     }
   },
   {
@@ -1063,10 +1063,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 520,
-      "protein": 14,
-      "fat": 22,
-      "carbs": 62
+      "kcal": 1143,
+      "protein": 36,
+      "fat": 72,
+      "carbs": 97
     }
   },
   {
@@ -1132,10 +1132,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 420,
-      "protein": 12,
-      "fat": 22,
-      "carbs": 44
+      "kcal": 1013,
+      "protein": 35,
+      "fat": 65,
+      "carbs": 98
     }
   },
   {
@@ -1181,10 +1181,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 580,
-      "protein": 22,
-      "fat": 38,
-      "carbs": 28
+      "kcal": 774,
+      "protein": 20,
+      "fat": 2,
+      "carbs": 171
     }
   },
   {
@@ -1260,10 +1260,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 680,
-      "protein": 28,
-      "fat": 26,
-      "carbs": 80
+      "kcal": 1749,
+      "protein": 62,
+      "fat": 101,
+      "carbs": 145
     }
   },
   {
@@ -1299,10 +1299,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 720,
-      "protein": 38,
-      "fat": 30,
-      "carbs": 68
+      "kcal": 1728,
+      "protein": 95,
+      "fat": 80,
+      "carbs": 145
     }
   },
   {
@@ -1363,10 +1363,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 480,
+      "kcal": 616,
       "protein": 10,
-      "fat": 20,
-      "carbs": 62
+      "fat": 31,
+      "carbs": 72
     }
   },
   {
@@ -1422,10 +1422,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 640,
-      "protein": 22,
-      "fat": 28,
-      "carbs": 76
+      "kcal": 1318,
+      "protein": 43,
+      "fat": 63,
+      "carbs": 143
     }
   },
   {
@@ -1486,10 +1486,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 760,
-      "protein": 32,
-      "fat": 34,
-      "carbs": 78
+      "kcal": 2231,
+      "protein": 108,
+      "fat": 114,
+      "carbs": 192
     }
   },
   {
@@ -1540,10 +1540,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 560,
-      "protein": 22,
+      "kcal": 992,
+      "protein": 46,
       "fat": 18,
-      "carbs": 76
+      "carbs": 157
     }
   },
   {
@@ -1639,10 +1639,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 620,
-      "protein": 20,
+      "kcal": 1019,
+      "protein": 52,
       "fat": 18,
-      "carbs": 88
+      "carbs": 161
     }
   },
   {
@@ -1698,10 +1698,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 680,
-      "protein": 24,
-      "fat": 30,
-      "carbs": 72
+      "kcal": 1066,
+      "protein": 37,
+      "fat": 94,
+      "carbs": 17
     }
   },
   {
@@ -1772,10 +1772,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 580,
-      "protein": 28,
-      "fat": 12,
-      "carbs": 84
+      "kcal": 1123,
+      "protein": 66,
+      "fat": 25,
+      "carbs": 155
     }
   },
   {
@@ -1841,10 +1841,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 560,
-      "protein": 18,
-      "fat": 18,
-      "carbs": 76
+      "kcal": 1058,
+      "protein": 45,
+      "fat": 20,
+      "carbs": 172
     }
   },
   {
@@ -1910,10 +1910,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 520,
-      "protein": 22,
-      "fat": 12,
-      "carbs": 78
+      "kcal": 727,
+      "protein": 47,
+      "fat": 20,
+      "carbs": 83
     }
   },
   {
@@ -2004,10 +2004,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 560,
-      "protein": 18,
-      "fat": 14,
-      "carbs": 88
+      "kcal": 1252,
+      "protein": 36,
+      "fat": 54,
+      "carbs": 150
     }
   },
   {
@@ -2088,10 +2088,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 480,
-      "protein": 14,
-      "fat": 12,
-      "carbs": 78
+      "kcal": 813,
+      "protein": 27,
+      "fat": 23,
+      "carbs": 126
     }
   },
   {
@@ -2167,10 +2167,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 520,
-      "protein": 18,
-      "fat": 16,
-      "carbs": 72
+      "kcal": 1161,
+      "protein": 47,
+      "fat": 51,
+      "carbs": 124
     }
   },
   {
@@ -2256,10 +2256,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 580,
-      "protein": 8,
-      "fat": 18,
-      "carbs": 96
+      "kcal": 1038,
+      "protein": 17,
+      "fat": 64,
+      "carbs": 110
     }
   },
   {
@@ -2335,10 +2335,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 620,
-      "protein": 10,
-      "fat": 26,
-      "carbs": 86
+      "kcal": 1934,
+      "protein": 34,
+      "fat": 113,
+      "carbs": 221
     }
   },
   {
@@ -2414,10 +2414,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 440,
-      "protein": 14,
-      "fat": 22,
-      "carbs": 44
+      "kcal": 955,
+      "protein": 28,
+      "fat": 68,
+      "carbs": 64
     }
   },
   {
@@ -2473,10 +2473,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 460,
-      "protein": 18,
-      "fat": 8,
-      "carbs": 76
+      "kcal": 631,
+      "protein": 36,
+      "fat": 4,
+      "carbs": 109
     }
   },
   {
@@ -2537,10 +2537,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 520,
-      "protein": 18,
-      "fat": 12,
-      "carbs": 78
+      "kcal": 958,
+      "protein": 40,
+      "fat": 16,
+      "carbs": 165
     }
   },
   {
@@ -2606,10 +2606,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 560,
-      "protein": 16,
-      "fat": 18,
-      "carbs": 80
+      "kcal": 1111,
+      "protein": 37,
+      "fat": 29,
+      "carbs": 176
     }
   },
   {
@@ -2665,10 +2665,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 680,
-      "protein": 48,
-      "fat": 30,
-      "carbs": 18
+      "kcal": 4614,
+      "protein": 337,
+      "fat": 326,
+      "carbs": 91
     }
   },
   {
@@ -2734,10 +2734,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 720,
-      "protein": 52,
-      "fat": 38,
-      "carbs": 12
+      "kcal": 6188,
+      "protein": 386,
+      "fat": 464,
+      "carbs": 122
     }
   },
   {
@@ -2808,10 +2808,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 460,
-      "protein": 28,
-      "fat": 24,
-      "carbs": 8
+      "kcal": 794,
+      "protein": 49,
+      "fat": 58,
+      "carbs": 22
     }
   },
   {
@@ -2882,10 +2882,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 520,
-      "protein": 28,
-      "fat": 22,
-      "carbs": 42
+      "kcal": 1219,
+      "protein": 61,
+      "fat": 72,
+      "carbs": 90
     }
   },
   {
@@ -2951,10 +2951,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 580,
-      "protein": 36,
-      "fat": 22,
-      "carbs": 54
+      "kcal": 919,
+      "protein": 92,
+      "fat": 55,
+      "carbs": 7
     }
   },
   {
@@ -3025,10 +3025,10 @@ export const BASELINE_RECIPES: Recipe[] = [
     "portions": 2,
     "reference": "",
     "nutrition": {
-      "kcal": 620,
-      "protein": 26,
-      "fat": 20,
-      "carbs": 84
+      "kcal": 1218,
+      "protein": 40,
+      "fat": 5,
+      "carbs": 254
     }
   }
 ];

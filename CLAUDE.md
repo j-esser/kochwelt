@@ -55,20 +55,23 @@ app/
 |---|---|
 | `services/recipeStore.ts` | Rezept-CRUD (AsyncStorage), Foto-Handling, Seed, Migrationen, `exportSingleRecipeJSON()` |
 | `services/plannerStore.ts` | Wochenplan lesen/schreiben |
-| `services/shoppingList.ts` | Einkaufsliste aufbauen, `scaleAmount()`, `shoppingListToICS()` |
+| `services/shoppingList.ts` | Einkaufsliste aufbauen (baseline-bewusst), `scaleAmount()`, `shoppingListToICS()` |
 | `services/nutritionGoals.ts` | Nährwertziele (Tagesziele, AsyncStorage) |
 | `services/recipePicker.ts` | Callback-Brücke Planer ↔ Picker-Modal |
 | `services/settingsStore.ts` | App-Einstellungen, Benachrichtigungen, `defaultPlannerPortions` |
 | `services/tips.ts` | Zentrale Tipp-Liste (`TIPS`), `tipsFor(context)`, `allVisibleTips()`, plattform-Filter |
+| `services/ingredientBaseline.ts` | Parser, Matcher, Nährwert-Berechnung, Mengen-Konvertierung (`parseIngredientText`, `findBaselineMatch`, `matchIngredient`, `resolveAmountInBase`, `formatBaseAmount`, `calcNutritionFromMatches`, `calcNutritionFromIngredients`) |
+| `services/userIngredients.ts` | Persistenz für Nutzer-eigene Zutaten (`loadBaseline()`, `addUserIngredients()`) — merged Bundle-Baseline + AsyncStorage |
 
 ### Komponenten
 
 | Datei | Zuständigkeit |
 |---|---|
-| `components/RecipeForm.tsx` | Formular für Erstellen/Bearbeiten + URL-/Vorlage-/JSON-Import |
+| `components/RecipeForm.tsx` | Formular für Erstellen/Bearbeiten + URL-/Vorlage-/JSON-Import + Baseline-Chips + Nährwert-Auto-Berechnung |
 | `components/RecipeImage.tsx` | Bild mit Fallback auf `food-fallback.jpg` |
 | `components/TipButton.tsx` | `?`-Icon (`help-circle-outline`), öffnet `TipModal` für einen Kontext |
 | `components/TipModal.tsx` | Bottom-Sheet mit Tipps (Cream-Orange-Boxen) |
+| `components/UnknownIngredientsModal.tsx` | Sammel-Dialog beim Speichern: pro unbekannter Zutat Name/Kategorie/Nährwerte pflegen → Eintrag in `kochwelt_user_ingredients` |
 
 ### Datenmodell (AsyncStorage-Key: `kochwelt_recipes`)
 
@@ -89,8 +92,11 @@ interface Recipe {
 
 interface Ingredient {
   name: string;
-  amount: string;       // "200 g", "2 EL", "½ TL" — unicode-Brüche erlaubt
+  amount: string;            // "200 g", "2 EL", "½ TL" — unicode-Brüche erlaubt
   shopCategory: string;
+  baselineId?: string;       // Referenz auf BaselineIngredient.id, gesetzt vom Parser
+  parsedQuantity?: number;   // numerische Menge, z.B. 200
+  parsedUnit?: string;       // normalisierte Einheit, z.B. "g", "EL"
 }
 ```
 
@@ -113,10 +119,10 @@ Alle | Pasta | Reis | Curry | Suppe | Fisch | Fleisch | Vegetarisch | Salat | Ei
 Beim App-Start (`app/_layout.tsx`) werden drei Funktionen sequenziell aufgerufen:
 
 1. **`seedIfEmpty()`** — lädt 40 Basis-Rezepte beim allerersten Start
-2. **`patchBaselineIngredients()`** — überschreibt `ingredients` + `portions` aller Baseline-Rezepte wenn `INGREDIENTS_VERSION` veraltet
+2. **`patchBaselineIngredients()`** — überschreibt `ingredients` + `portions` + `nutrition` aller Baseline-Rezepte wenn `INGREDIENTS_VERSION` veraltet. **Reichert dabei jede Zutat über `matchIngredient()` an** — setzt `baselineId`, `parsedQuantity`, `parsedUnit` und übernimmt `shopCategory` aus der Baseline.
 3. **`patchBaselinePhotos()`** — aktualisiert Foto-URLs wenn `PHOTO_VERSION` veraltet
 
-**Versionsnummern in `recipeStore.ts` erhöhen um Migration auszulösen.**
+**Versionsnummern in `recipeStore.ts` erhöhen um Migration auszulösen.** Aktuell: `INGREDIENTS_VERSION = '5'`, `PHOTO_VERSION = '4'`.
 
 ---
 
@@ -199,6 +205,47 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 - Slots: `mittag` | `abend`
 - `meal.recipeId` kann `undefined` sein (Kalte Küche / manueller Eintrag) — **immer prüfen vor Zugriff**
 
+### Ingredient-Baseline — `constants/ingredientBaseline.ts` + `services/ingredientBaseline.ts`
+**Konzept**: Zentrale Zutaten-Datenbank (~100 Einträge) mit ID, Name, Aliasen, Einkaufskategorie, Basis-Einheit (`g`/`ml`/`Stück`), Standard-Gewicht je Stück, Einheiten-Tabelle (`{EL: 15, TL: 5, Dose: 400}`) und Nährwerten je 100g/100ml. Jede Rezept-Zutat referenziert über `baselineId` einen Eintrag.
+
+**Parser** (`parseIngredientText`): zerlegt Strings wie „2 EL Olivenöl zum Anbraten" in `{quantity: 2, unit: 'EL', rawName: 'Olivenöl'}`. Versteht Brüche (`½¼¾⅓⅔`), normalisiert Einheiten (`Esslöffel` → `EL`), strippt Floskeln (`zum Anbraten`, `fein gehackt`, `extra vergine`).
+
+**Matcher** (`findBaselineMatch`): Exakt-Match auf Name → Aliase → Fuzzy-Substring mit Wortgrenz-Regex `(?:^|\s)wort(?:$|\s|n\b|en\b|er\b)` → längster Treffer gewinnt.
+
+**Mengen-Konvertierung** (`resolveAmountInBase`): rechnet eine Menge mit Einheit in die `base_unit` der Baseline um. `kg`→`g×1000`, `l`→`ml×1000`, benannte Einheiten via `default_weight_per_unit`, gezählte Items (`!unit` oder `'Stück'`) via `default_weight_per_piece`. Liefert `null` wenn nicht konvertierbar.
+
+**Anzeige** (`formatBaseAmount`): `1500 g` → `"1.5 kg"`, `1200 ml` → `"1.2 l"`, sonst Originaleinheit.
+
+**Nährwert-Berechnung** (`calcNutritionFromMatches` / `calcNutritionFromIngredients`): summiert `quantity_in_base × nutrients_per_100 / 100` über alle Zutaten. Berechnet Totals für das gesamte Rezept (alle Portionen). Zutaten ohne Match oder ohne konvertierbare Einheit werden im `skippedCount` mitgezählt.
+
+**Eigene Zutaten** (`services/userIngredients.ts`): User-Eingaben aus `UnknownIngredientsModal` werden in AsyncStorage (`kochwelt_user_ingredients`) persistiert und zur Bundle-Baseline gemerged. `loadBaseline()` liefert die kombinierte Liste.
+
+### RecipeForm — Zutaten-Workflow
+- `parseIngredients(text, baseline)`: pro Zeile → `matchIngredient` → `Ingredient` mit `baselineId`, `parsedQuantity`, `parsedUnit`. **Multi-Line-Format**: Reine Mengenzeilen (z.B. „75 g") werden mit der Folgezeile zusammengeführt; Anmerkungen wie „à ca. 200 g" oder Adjektiv-Zeilen (Kleinbuchstabe-Start) werden übersprungen.
+- **Chip-Anzeige**: `parsedItems` (useMemo aus `ingredientsText`) → grüne ✅-Chips für Match, gelbe ⚠️-Chips für unbekannt. Hinweis-Box bei `unknownCount > 0`.
+- **Sammel-Modal beim Speichern**: bei `unknownItems.length > 0` öffnet `UnknownIngredientsModal`. Bestätigen → `addUserIngredients()` → `parseIngredients` mit aktualisierter Baseline neu → `saveRecipe`.
+- **„Aus Zutaten berechnen"-Button**: ruft `calcNutritionFromIngredients(parsedItems, baseline)` → Alert mit Vorschau + Abdeckung („X/Y Zutaten erkannt") → bei „Übernehmen" werden `kcal`/`protein`/`fat`/`carbs`-State-Felder gesetzt. Manuelle Werte werden NIE ohne Klick überschrieben.
+
+### Einkaufsliste — Baseline-bewusste Aggregation (`services/shoppingList.ts`)
+- **Merge-Schlüssel**: `ingredient.baselineId ?? name.toLowerCase().trim()`. Bei Match werden Display-Name und Einkaufskategorie aus der Baseline übernommen.
+- **On-the-fly-Match**: Zutaten ohne `baselineId` (z.B. aus eigenen Rezepten ohne Migration) werden beim Bauen der Liste über `matchIngredient` nachträglich gematcht. Garantiert konsistente Aggregation auch ohne explizite Migration.
+- **Mengen-Summierung**: `parsedQuantity × factor` wird über `resolveAmountInBase` in `base_unit` umgerechnet. Bei vollständig konvertierbaren Einträgen → `"430 ml (2 EL + 100 ml + 1 Schuss)"`. Bei mindestens einem nicht-konvertierbaren Eintrag → Legacy-Fallback (`combineAmountsLegacy`, summiert nur identische Unit-Strings).
+- **Fortschritt**: `ShoppingItem` hat zusätzlich `baselineId?` und `baseAmount?: { value, unit }` für mögliche zukünftige UI-Erweiterungen.
+
+### Fuse.js — Tippfehler-tolerante Suche
+- Eingebaut in [rezepte.tsx](app/(tabs)/rezepte.tsx), [pick.tsx](app/recipe/pick.tsx), [RecipeForm.tsx](components/RecipeForm.tsx) (Vorlagen-Picker)
+- Konfiguration: `threshold: 0.35`, `ignoreLocation: true`, `minMatchCharLength: 2`
+- Gewichtete Keys: Titel ×3, Zutaten-Name ×2, Description ×1, Kategorien ×1
+- Fuse-Index per `useMemo([recipes])` — wird nicht bei jedem Render neu gebaut
+- Suchergebnisse werden als `Set<id>` über das bestehende Filter-Pipeline (Tab → Search → Smart Filter) gelegt
+
+### Scripts (`scripts/`)
+- `auditBaselineIngredients.ts`: prüft Match-Quote der Baseline-Rezepte gegen Baseline-Zutaten, generiert Markdown-Report `scripts/baseline-audit.md`. Aktuell 100 % (438/438).
+- `calcBaselineNutrition.ts`: berechnet Nährwerte für alle 40 Baseline-Rezepte aus den Zutaten (`parseIngredientText` + `calcNutritionFromMatches`) und schreibt sie direkt in `constants/baselineRecipes.ts` zurück. Beim Erhöhen von `INGREDIENTS_VERSION` migriert die App alle bestehenden User-Stände.
+- `parserSmokeTest.ts`: ad-hoc-Tests für `parseIngredientText`/`findBaselineMatch`.
+
+Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `moduleResolution: "bundler"`).
+
 ---
 
 ## Bekannte Einschränkungen
@@ -215,6 +262,7 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 - ⏳ Nährwert-Statistiken (Charts)
 - ⏳ Push-Erinnerungen (Kochen-Erinnerung)
 - ⏳ Cloud-Sync (Supabase)
+- ⏳ Phase 4 Ingredient-Baseline: Gist-Sync für Baseline-Updates ohne App-Release; Settings-UI zum manuellen Aktualisieren der Baseline
 
 ---
 

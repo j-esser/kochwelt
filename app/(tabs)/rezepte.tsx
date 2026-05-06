@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import Fuse from 'fuse.js';
 import { View, Text, TextInput, FlatList, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { RecipeImage } from '../../components/RecipeImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -153,6 +154,18 @@ export default function RezepteScreen() {
     })();
   }, []));
 
+  const fuse = useMemo(() => new Fuse(recipes, {
+    keys: [
+      { name: 'title', weight: 3 },
+      { name: 'ingredients.name', weight: 2 },
+      { name: 'description', weight: 1 },
+      { name: 'categories', weight: 1 },
+    ],
+    threshold: 0.35,
+    ignoreLocation: true,
+    minMatchCharLength: 2,
+  }), [recipes]);
+
   const filtered = useMemo(() => {
     let list = recipes;
     if (activeTab === 'Ohne Kategorie') {
@@ -161,20 +174,15 @@ export default function RezepteScreen() {
       list = list.filter(r => r.categories.includes(activeTab));
     }
     if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(r =>
-        r.title.toLowerCase().includes(q) ||
-        r.description.toLowerCase().includes(q) ||
-        r.ingredients.some(i => i.name.toLowerCase().includes(q)) ||
-        r.categories.some(c => c.toLowerCase().includes(q))
-      );
+      const hits = new Set(fuse.search(search.trim()).map(r => r.item.id));
+      list = list.filter(r => hits.has(r.id));
     }
     for (const id of activeFilters) {
       const f = SMART_FILTERS.find(f => f.id === id);
       if (f) list = list.filter(f.test);
     }
     return list;
-  }, [recipes, activeTab, search, activeFilters]);
+  }, [recipes, activeTab, search, activeFilters, fuse]);
 
   function toggleFilter(id: string) {
     setActiveFilters(prev => {

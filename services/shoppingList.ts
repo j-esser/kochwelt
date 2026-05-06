@@ -1,15 +1,19 @@
 import { WeekPlan, PlannedMeal } from './plannerStore';
 import { Recipe } from './recipeStore';
+import { BASELINE_INGREDIENTS } from '../constants/ingredientBaseline';
+import { resolveAmountInBase, formatBaseAmount, matchIngredient } from './ingredientBaseline';
 
 export interface ShoppingItem {
   name: string;
-  amounts: string[];        // alle Einzelmengen (z.B. ["400 g", "200 g"])
-  combined: string;         // zusammengefasst (z.B. "600 g")
+  baselineId?: string;
+  amounts: string[];                                          // Original-Mengen, skaliert
+  baseAmount?: { value: number; unit: 'g' | 'ml' | 'Stück' }; // konvertierte Summe (wenn alle konvertierbar)
+  combined: string;                                           // Anzeige-String
   shopCategory: string;
   checked: boolean;
 }
 
-export type ShoppingList = Record<string, ShoppingItem[]>; // key: shopCategory
+export type ShoppingList = Record<string, ShoppingItem[]>;
 
 const CATEGORY_ORDER = [
   'Gemüse & Obst', 'Fleisch & Fisch', 'Mopro',
@@ -37,9 +41,9 @@ export function scaleAmount(amount: string, factor: number): string {
   return `${rounded}${parsed.unit ? ' ' + parsed.unit : ''}`.trim();
 }
 
-function combineAmounts(amounts: string[]): string {
+// Legacy-Fallback: summiert nur, wenn alle Mengen identische Unit-Strings haben
+function combineAmountsLegacy(amounts: string[]): string {
   if (amounts.length === 1) return amounts[0];
-  // Try to sum numeric amounts with same unit
   const parsed = amounts.map(a => parseAmount(a));
   const units = [...new Set(parsed.filter(Boolean).map(p => p!.unit))];
   if (units.length === 1 && parsed.every(Boolean)) {
@@ -51,9 +55,18 @@ function combineAmounts(amounts: string[]): string {
   return amounts.join(' + ');
 }
 
+interface Bucket {
+  name: string;
+  baselineId?: string;
+  amounts: string[];
+  baseSum?: { value: number; unit: 'g' | 'ml' | 'Stück' };
+  unconvertible: number; // Anzahl Einträge, die nicht in base_unit umgerechnet werden konnten
+  shopCategory: string;
+}
+
 export function buildShoppingList(weekPlan: WeekPlan, recipeMap: Record<string, Recipe>): ShoppingList {
-  // Collect all scaled ingredients
-  const raw: Record<string, { amounts: string[]; shopCategory: string }> = {};
+  const baselineById = new Map(BASELINE_INGREDIENTS.map(b => [b.id, b]));
+  const buckets = new Map<string, Bucket>();
 
   for (const dayPlan of Object.values(weekPlan)) {
     const meals = [dayPlan.mittag, dayPlan.abend, ...(dayPlan.snacks ?? [])].filter(Boolean) as PlannedMeal[];
@@ -64,36 +77,79 @@ export function buildShoppingList(weekPlan: WeekPlan, recipeMap: Record<string, 
       const factor = meal.portions / (recipe.portions || 2);
 
       for (const ing of recipe.ingredients) {
-        const key = ing.name.toLowerCase().trim();
-        const scaledAmount = scaleAmount(ing.amount, factor);
-        if (!raw[key]) {
-          raw[key] = { amounts: [], shopCategory: ing.shopCategory };
+        // Baseline ggf. on-the-fly ermitteln (für Nutzer-Rezepte ohne migrierte baselineId)
+        let baseline = ing.baselineId ? baselineById.get(ing.baselineId) : undefined;
+        let parsedQty = ing.parsedQuantity;
+        let parsedUnit = ing.parsedUnit;
+        if (!baseline) {
+          const line = [ing.amount, ing.name].filter(Boolean).join(' ');
+          const m = matchIngredient(line, BASELINE_INGREDIENTS);
+          if (m.baseline) { baseline = m.baseline; parsedQty = m.quantity; parsedUnit = m.unit; }
         }
-        if (scaledAmount) raw[key].amounts.push(scaledAmount);
+
+        const baselineId = baseline?.id;
+        const key = baselineId ?? ing.name.toLowerCase().trim();
+        const displayName = baseline?.name ?? (ing.name.charAt(0).toUpperCase() + ing.name.slice(1));
+        const shopCategory = baseline?.category ?? ing.shopCategory ?? 'Sonstiges';
+
+        let bucket = buckets.get(key);
+        if (!bucket) {
+          bucket = { name: displayName, baselineId, amounts: [], unconvertible: 0, shopCategory };
+          buckets.set(key, bucket);
+        }
+
+        const scaledAmount = scaleAmount(ing.amount, factor);
+        const hasAmount = !!scaledAmount.trim();
+        if (hasAmount) bucket.amounts.push(scaledAmount);
+
+        // Versuch: Menge in base_unit umrechnen und summieren
+        if (baseline && parsedQty != null) {
+          const scaledQty = parsedQty * factor;
+          const inBase = resolveAmountInBase(scaledQty, parsedUnit, baseline);
+          if (inBase != null) {
+            if (!bucket.baseSum) bucket.baseSum = { value: 0, unit: baseline.base_unit };
+            bucket.baseSum.value += inBase;
+          } else if (hasAmount) {
+            bucket.unconvertible++;
+          }
+        } else if (hasAmount) {
+          bucket.unconvertible++;
+        }
       }
     }
   }
 
-  // Group by shopCategory
   const result: ShoppingList = {};
-  for (const [name, data] of Object.entries(raw)) {
-    const cat = data.shopCategory || 'Sonstiges';
-    if (!result[cat]) result[cat] = [];
-    result[cat].push({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      amounts: data.amounts,
-      combined: combineAmounts(data.amounts),
-      shopCategory: cat,
+  for (const bucket of buckets.values()) {
+    const item: ShoppingItem = {
+      name: bucket.name,
+      baselineId: bucket.baselineId,
+      amounts: bucket.amounts,
+      baseAmount: bucket.baseSum,
+      combined: renderCombined(bucket),
+      shopCategory: bucket.shopCategory,
       checked: false,
-    });
+    };
+    if (!result[bucket.shopCategory]) result[bucket.shopCategory] = [];
+    result[bucket.shopCategory].push(item);
   }
 
-  // Sort items within each category
   for (const cat of Object.keys(result)) {
     result[cat].sort((a, b) => a.name.localeCompare(b.name, 'de'));
   }
-
   return result;
+}
+
+function renderCombined(bucket: Bucket): string {
+  if (bucket.amounts.length === 0) return '';
+  if (bucket.amounts.length === 1) return bucket.amounts[0];
+  // Alle Einträge konvertierbar → Summe in base_unit + Original-Detail
+  if (bucket.baseSum && bucket.unconvertible === 0) {
+    const total = formatBaseAmount(bucket.baseSum.value, bucket.baseSum.unit);
+    return `${total} (${bucket.amounts.join(' + ')})`;
+  }
+  // Gemischt oder ohne Baseline → Legacy-Verhalten
+  return combineAmountsLegacy(bucket.amounts);
 }
 
 export function shoppingListToText(list: ShoppingList): string {
