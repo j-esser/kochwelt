@@ -253,9 +253,13 @@ export async function getGiftSyncStatus(): Promise<GiftSyncStatus> {
 
 // ─── Submission ───────────────────────────────────────────────────────────────
 
+// Empfänger für Rezept-Vorschläge. passinbox-Alias — kann jederzeit getauscht
+// werden, ohne dass die persönliche Mail-Adresse in der App auftaucht.
+const SUBMISSION_EMAIL = 'kochwelt.lens838@passinbox.com';
+
 /**
- * Baut eine GitHub-Issue-URL, die den User in den Browser schickt, um sein
- * Rezept als Issue einzureichen. Repo + Label sind fest verdrahtet.
+ * Baut einen `mailto:`-Link, der die native Mail-App des Users mit Empfänger,
+ * Betreff und Rezept-JSON im Body öffnet. Funktioniert ohne GitHub-Account.
  */
 export function buildSubmissionUrl(recipe: Recipe): string {
   const cleanRecipe = { ...recipe };
@@ -263,29 +267,19 @@ export function buildSubmissionUrl(recipe: Recipe): string {
   if (cleanRecipe.photo && !cleanRecipe.photo.startsWith('http')) {
     delete cleanRecipe.photo;
   }
-  const title = `Rezept-Vorschlag: ${recipe.title}`;
+  const subject = `Rezept-Vorschlag: ${recipe.title}`;
   const body = [
-    `Hier ist ein Rezept-Vorschlag für die Geschenk-Sammlung.`,
+    `Hier ist ein Rezept-Vorschlag für die Kochwelt-App.`,
     ``,
-    `**Titel:** ${recipe.title}`,
-    `**Kochzeit:** ${recipe.cookTime} min`,
-    `**Portionen:** ${recipe.portions}`,
+    `Titel:     ${recipe.title}`,
+    `Kochzeit:  ${recipe.cookTime} min`,
+    `Portionen: ${recipe.portions}`,
     ``,
-    `<details><summary>JSON</summary>`,
-    ``,
-    '```json',
+    `── JSON-Daten (für den Import) ──────────────────────`,
     JSON.stringify(cleanRecipe, null, 2),
-    '```',
-    ``,
-    `</details>`,
   ].join('\n');
 
-  const params = new URLSearchParams({
-    title,
-    body,
-    labels: 'rezept-vorschlag',
-  });
-  return `https://github.com/j-esser/kochwelt/issues/new?${params.toString()}`;
+  return `mailto:${SUBMISSION_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 // ─── Debug ────────────────────────────────────────────────────────────────────

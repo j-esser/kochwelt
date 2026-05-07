@@ -115,9 +115,9 @@ export default function EinstellungenScreen() {
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) await Linking.openURL(url);
-      else Alert.alert('Fehler', 'GitHub konnte nicht geöffnet werden.');
+      else Alert.alert('Fehler', 'Mail-App konnte nicht geöffnet werden. Bitte richte ein Mail-Konto auf dem Gerät ein.');
     } catch {
-      Alert.alert('Fehler', 'Browser konnte nicht geöffnet werden.');
+      Alert.alert('Fehler', 'Mail-App konnte nicht geöffnet werden.');
     }
   }
 
@@ -528,7 +528,7 @@ export default function EinstellungenScreen() {
             <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
               <Text style={{ fontSize: 17, fontWeight: '700', color: '#1c1917' }}>Welches Rezept einsenden?</Text>
               <Text style={{ fontSize: 12, color: '#78716c', marginTop: 4 }}>
-                Öffnet GitHub mit deinem Rezept als JSON. Wenn es gut passt, kommt es als Geschenk-Rezept zu allen anderen.
+                Öffnet deine Mail-App mit dem Rezept als Vorlage. Wenn es gut passt, kommt es als Geschenk-Rezept zu allen anderen.
               </Text>
             </View>
             <FlatList
