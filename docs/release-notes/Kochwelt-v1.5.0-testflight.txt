@@ -1,0 +1,32 @@
+Kochwelt 1.5.0 — Geschenk-Rezepte
+
+NEU
+- Ab und zu wandert ein neues Rezept als Geschenk in deine Sammlung.
+- Ein orangefarbener Banner in der Rezepte-Liste weist dich darauf hin.
+- Tap auf den Banner öffnet das Rezept; Tap auf das X schließt ihn nur.
+- Eigene Lieblingsrezepte kannst du als Vorschlag einreichen — die Mail-App
+  öffnet sich mit fertigem Vorschlags-Text. Kein Account nötig.
+- Steuerung unter: Einstellungen → Geschenk-Rezepte
+  (Toggle "Geschenke empfangen", manueller Refresh, "Eigenes Rezept einsenden")
+
+WAS BITTE TESTEN
+- Geschenk-Banner: Tap & Schließen funktionieren wie erwartet?
+- Toggle: aus = keine neuen Geschenke, an = beim Cold-Start kommen ausstehende
+- "Eigenes Rezept einsenden" → Mail-App öffnet sich mit Vorschlag?
+- Gelöschte Geschenke kommen nach Sync NICHT von alleine zurück?
+- Bestehende eigene Rezepte/Wochenpläne unverändert?
+
+WAS BLEIBT GLEICH
+- Eure eigenen Rezepte werden NIE überschrieben
+- Geschenke sind ganz normale Rezepte: editierbar, löschbar, wochenplan-fähig
+- Toggle aus stoppt nur Neulieferungen, bestehende Geschenke bleiben
+
+BEKANNT
+- Sync läuft beim App-Start (oder manuell in Settings).
+- Im iOS Simulator ohne Mail-Konto schlägt "Einsenden" mit Hinweis fehl —
+  auf echten Geräten klappt's normal.
+- Geschenke werden pro Gerät gemerkt, noch nicht über Geräte hinweg geteilt.
+
+FEEDBACK
+Bugs/Wünsche bitte direkt zurück, oder gleich ein Lieblingsrezept einsenden.
+Diesmal besonders: würdet ihr selbst einsenden? Wenn nicht — was hält ab?

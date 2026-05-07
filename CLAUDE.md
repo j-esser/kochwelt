@@ -63,6 +63,7 @@ app/
 | `services/ingredientBaseline.ts` | Parser, Matcher, Nährwert-Berechnung, Mengen-Konvertierung (`parseIngredientText`, `findBaselineMatch`, `matchIngredient`, `resolveAmountInBase`, `formatBaseAmount`, `calcNutritionFromMatches`, `calcNutritionFromIngredients`) |
 | `services/userIngredients.ts` | Persistenz für Nutzer-eigene Zutaten (`loadBaseline()`, `addUserIngredients()`) — merged Remote-Cache (falls vorhanden) ODER Bundle + AsyncStorage |
 | `services/baselineSync.ts` | Gist-Sync für die Zutaten-Baseline. `syncBaselineIfNeeded()` (TTL 6h, fire-and-forget), `syncBaselineNow()` (manuell), `getCachedRemoteBaseline()`, `getBaselineSyncStatus()` |
+| `services/giftRecipes.ts` | Geschenk-Rezepte: Gist-Sync, `deliverPendingGifts()`, Banner-Queue, `buildSubmissionUrl()` (mailto:) |
 
 ### Komponenten
 
@@ -73,6 +74,7 @@ app/
 | `components/TipButton.tsx` | `?`-Icon (`help-circle-outline`), öffnet `TipModal` für einen Kontext |
 | `components/TipModal.tsx` | Bottom-Sheet mit Tipps (Cream-Orange-Boxen) |
 | `components/UnknownIngredientsModal.tsx` | Sammel-Dialog beim Speichern: pro unbekannter Zutat Name/Kategorie/Nährwerte pflegen → Eintrag in `kochwelt_user_ingredients` |
+| `components/GiftBanner.tsx` | Orange Banner in der Rezepte-Liste, zeigt das nächste ungelesene Geschenk-Rezept; Tap = öffnen + read, X = nur read |
 
 ### Datenmodell (AsyncStorage-Key: `kochwelt_recipes`)
 
@@ -264,10 +266,41 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 
 **Schutz vor Datenverlust**: Sync schreibt ausschließlich in den Remote-Cache (`kochwelt_baseline_remote` + `_meta`). Weder `kochwelt_user_ingredients` noch `kochwelt_recipes` werden angefasst.
 
+### Geschenk-Rezepte (Stufe 1) — `services/giftRecipes.ts`
+**Idee**: Kuratierte „Geschenk-Rezepte" werden über einen separaten Gist verteilt. Beim App-Start synct die App, importiert fällige Geschenke via `saveRecipe()` und merkt sich gelieferte IDs in `kochwelt_gifts_delivered`. Ein Banner auf der Rezepte-Liste informiert über ungelesene Geschenke.
+
+**Architektur** parallel zu `baselineSync.ts`:
+- `GIFT_GIST_URL` zeigt auf `gist.github.com/j-esser/5f7d11565cf87fba40812b5a789288fe` (Datei `gifts.json`)
+- `syncGiftsIfNeeded()` (TTL 6h, fire-and-forget am Start) + `syncGiftsNow()` (manueller Refresh)
+- `deliverPendingGifts()` ist idempotent: importiert nur Gifts, deren `gift.id` noch nicht in `delivered` ist UND deren `deliverAfter <= heute`. Nach Erfolg: ID in `delivered` und `unread` aufgenommen.
+- `kochwelt_gifts_delivered` ist permanent — gelöschte/modifizierte Geschenke werden NICHT re-delivered. `kochwelt_gifts_unread` wird vom Banner abgebaut.
+- `kochwelt_gifts_enabled` (Default `true`) gated `deliverPendingGifts`. Sync läuft trotzdem (günstig dank ETag).
+
+**Gist-Format** (`scripts/gifts-gist.json`):
+```json
+{
+  "schemaVersion": 1, "version": 1, "updatedAt": "2026-05-07",
+  "gifts": [
+    {
+      "id": "g_2026_05_porreetorte",
+      "deliverAfter": "2026-05-01",
+      "recipe": { "id": "...", "title": "Porreetorte", ...vollständiges Recipe-Objekt... }
+    }
+  ]
+}
+```
+- `gift.id` ist der Tracking-Schlüssel (Format `g_<YYYY_MM>_<slug>`); nicht zu verwechseln mit `recipe.id`.
+- Lokale Foto-Pfade (`file://...`) werden vom Helper-Script entfernt; nur HTTPS-URLs übermitteln.
+
+**Banner** (`components/GiftBanner.tsx`): rendert das erste Element aus `getUnreadGifts()`. Tap → `markGiftRead(id)` + Navigation zu Detail. X → `markGiftRead(id)` ohne Navigation. Mehrere ungelesene → „+N weitere"-Suffix.
+
+**Rezept einsenden** (`buildSubmissionUrl`): erzeugt `mailto:kochwelt.lens838@passinbox.com?subject=...&body=<JSON>`. Kein GitHub-Account nötig — nutzt die native Mail-App via `Linking.openURL`. passinbox-Alias hält die persönliche Mail-Adresse aus dem App-Quellcode raus.
+
 ### Scripts (`scripts/`)
 - `auditBaselineIngredients.ts`: prüft Match-Quote der Baseline-Rezepte gegen Baseline-Zutaten, generiert Markdown-Report `scripts/baseline-audit.md`. Aktuell 100 % (438/438).
 - `calcBaselineNutrition.ts`: berechnet Nährwerte für alle 40 Baseline-Rezepte aus den Zutaten (`parseIngredientText` + `calcNutritionFromMatches`) und schreibt sie direkt in `constants/baselineRecipes.ts` zurück. Beim Erhöhen von `INGREDIENTS_VERSION` migriert die App alle bestehenden User-Stände.
 - `exportBaselineForGist.ts`: erzeugt `scripts/baseline-gist.json` aus `BASELINE_INGREDIENTS` für den Gist-Upload. Aufruf: `npx tsx scripts/exportBaselineForGist.ts <version>` — Version IMMER inkrementieren.
+- `addGiftRecipe.ts`: hängt ein Rezept (aus JSON-Datei) als Geschenk an `scripts/gifts-gist.json` an, generiert stabile Gift-ID, bumpt Version. Aufruf: `npx tsx scripts/addGiftRecipe.ts <recipe.json> <YYYY-MM-DD>`. Type-only-Imports, weil Wert-Imports den React-Native-Modulgraph in tsx ziehen würden.
 - `parserSmokeTest.ts`: ad-hoc-Tests für `parseIngredientText`/`findBaselineMatch`.
 
 Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `moduleResolution: "bundler"`).
@@ -293,11 +326,11 @@ Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `
 
 ## Release-Workflow (TestFlight)
 
-Bei jedem App-Release wird unter `docs/release-notes/` ein Tester-Dokument
-in drei Formaten angelegt: `Kochwelt-v<version>.{html,docx,rtf}`. Vorlage
-ist `Kochwelt-v1.1.0.html` — Struktur: Begrüßung → „Was ist neu" → „Funktions-
-Übersicht" (Home / Rezepte / Planer / Shopping / Einstellungen) →
-Test-Schwerpunkte → Feedback-Aufruf.
+Bei jedem App-Release werden unter `docs/release-notes/` **vier Dateien** angelegt:
+
+1. `Kochwelt-v<version>.html` — Tester-Doku, Volltext (Vorlage: `Kochwelt-v1.1.0.html`). Struktur: Begrüßung → „Was ist neu" → „Funktions-Übersicht" → Test-Schwerpunkte → Bekannte Einschränkungen → Feedback.
+2. `Kochwelt-v<version>.docx` und `.rtf` — Konvertierungen der HTML via `textutil`, für Tester die kein HTML lesen.
+3. `Kochwelt-v<version>-testflight.txt` — **Kurztext** für das „What to Test"-Feld in App Store Connect. Plain-Text, max. 4000 Zeichen, Struktur: NEU → WAS BITTE TESTEN → WAS BLEIBT GLEICH → BEKANNT → FEEDBACK.
 
 Konvertierung HTML → docx/rtf via `textutil` (macOS, kein Pandoc nötig):
 
@@ -306,5 +339,7 @@ cd docs/release-notes
 textutil -convert docx -output Kochwelt-v<version>.docx Kochwelt-v<version>.html
 textutil -convert rtf  -output Kochwelt-v<version>.rtf  Kochwelt-v<version>.html
 ```
+
+Der TestFlight-Kurztext wird per Hand geschrieben — er ist die einzige Doku, die viele Tester überhaupt sehen, daher knapp & klar formulieren.
 
 Bei Versions-Bump in `app.json` (`expo.version`) immer mitpflegen.

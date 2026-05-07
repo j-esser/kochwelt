@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Kochwelt 1.5.0 — Was ist neu</title>
+  <style>
+    body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1c1917; line-height: 1.55; max-width: 720px; margin: 24px; }
+    h1 { color: #c2410c; font-size: 28pt; margin-bottom: 4px; }
+    h2 { color: #f97316; font-size: 18pt; margin-top: 28px; border-bottom: 2px solid #fed7aa; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-top: 18px; margin-bottom: 4px; color: #1c1917; }
+    p.tagline { color: #78716c; font-size: 12pt; margin-top: 0; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    .highlight { background: #fff7ed; padding: 12px 16px; border-left: 3px solid #f97316; border-radius: 4px; margin: 12px 0; }
+    .muted { color: #78716c; font-size: 11pt; }
+    .ask { background: #f0f9ff; padding: 12px 16px; border-left: 3px solid #0ea5e9; border-radius: 4px; margin: 12px 0; }
+  </style>
+</head>
+<body>
+
+<h1>Kochwelt 1.5.0</h1>
+<p class="tagline">Persönliche Rezeptverwaltung &amp; Wochenplaner — Update Mai 2026</p>
+
+<p>Liebe Tester,</p>
+
+<p>1.5.0 macht Kochwelt ein bisschen kommunikativer: ab und zu wandert ein
+<strong>neues Rezept als Geschenk</strong> in eure Sammlung — kuratiert, kein
+Spam, keine Werbung. Und falls ihr selbst ein Lieblingsrezept habt, das
+zur Allgemeinheit passt, könnt ihr es per Knopfdruck als Vorschlag einreichen.
+Alles ohne Account-Anmeldung, alles auf Wunsch abschaltbar.</p>
+
+<h2>Was ist neu in 1.5.0</h2>
+
+<h3>Geschenk-Rezepte</h3>
+<p>Beim App-Start prüft Kochwelt im Hintergrund, ob ein neues Geschenk-Rezept
+auf euch wartet (max. einmal alle 6 Stunden). Wenn ja: Das Rezept landet
+direkt in eurer Liste, und auf der Rezepte-Seite erscheint ein orangefarbener
+<strong>Geschenk-Banner</strong> mit dem Titel.</p>
+
+<ul>
+  <li><strong>Tap auf den Banner</strong> → Rezept öffnet sich, Banner ist weg</li>
+  <li><strong>Tap auf das X</strong> → Banner schließt, Rezept bleibt in der Liste</li>
+  <li>Bei mehreren ungelesenen Geschenken zeigt der Banner „+N weitere"</li>
+</ul>
+
+<p>Den Status seht ihr unter <strong>Einstellungen → Geschenk-Rezepte</strong>:
+aktuelle Version, wie viele Geschenke insgesamt verfügbar sind, wie viele ihr
+schon erhalten habt. Mit dem Toggle <em>„Geschenke empfangen"</em> könnt ihr
+das Feature jederzeit komplett deaktivieren.</p>
+
+<h3>Eigenes Rezept einsenden</h3>
+<p>Habt ihr ein Lieblingsrezept, das ihr mit allen teilen wollt? Unter
+<strong>Einstellungen → Geschenk-Rezepte → „Eigenes Rezept einsenden"</strong>
+könnt ihr eines aus eurer Sammlung auswählen — die Mail-App öffnet sich mit
+einer fertigen Vorschlags-Mail (Rezept-Daten als JSON im Body). Ihr drückt nur
+noch auf Senden. Gute Vorschläge wandern dann in die Geschenk-Sammlung für alle.</p>
+
+<p>Hinweis: Es ist <strong>kein GitHub- oder sonstiger Account</strong> nötig —
+einfach Mail-App, fertig.</p>
+
+<h3>Garantien für eure Daten (auch hier)</h3>
+<ul>
+  <li><strong>Eure eigenen Rezepte</strong> bleiben unverändert — Geschenke
+  werden zusätzlich angelegt, nichts überschrieben.</li>
+  <li><strong>Geschenk-Rezepte sind ganz normale Rezepte</strong>: ihr könnt
+  sie bearbeiten, löschen, in den Wochenplan ziehen, mit anderen teilen.</li>
+  <li><strong>Gelöschte Geschenke kommen nicht von alleine zurück</strong> —
+  Kochwelt merkt sich, was geliefert wurde, und liefert nichts doppelt.</li>
+  <li><strong>Toggle aus = stille Pause</strong>: kein Banner, keine neuen
+  Geschenke, bestehende bleiben.</li>
+</ul>
+
+<h2>Funktions-Übersicht</h2>
+
+<h3>Home</h3>
+<ul>
+  <li>Persönliche Begrüßung &amp; Wochenstatistik (geplante Mahlzeiten, Tage)</li>
+  <li>Rezept-des-Tages-Vorschlag</li>
+</ul>
+
+<h3>Rezepte</h3>
+<ul>
+  <li>40 Basis-Rezepte beim ersten Start (mit aus den Zutaten berechneten Nährwerten)</li>
+  <li>Suche mit Tippfehler-Toleranz</li>
+  <li>Kategorie-Tabs (Pasta, Reis, Curry, Suppe, Fisch, Fleisch, Vegetarisch, Salat, Eintopf)</li>
+  <li>Smart-Filter: Schnell, Einfach, High-Protein, Low-Carb, Low-Kalorie</li>
+  <li>Detail-Ansicht mit Live-Portionsskalierung</li>
+  <li>Persönliche Bewertung (1–5 Sterne)</li>
+  <li>Foto pro Rezept (Kamera oder Galerie)</li>
+  <li>Smarte Zutaten-Erkennung mit ✅/⚠️-Chips</li>
+  <li>„Aus Zutaten berechnen"-Button für Nährwerte</li>
+  <li>Mehrzeiliges Zutaten-Format wird automatisch erkannt</li>
+  <li>Browser-Import via URL, Clipboard-Erkennung, Android-Share-Sheet</li>
+  <li>Vorlage-Modal mit Beispiel-Vorlage und „Aus Rezept duplizieren"</li>
+  <li>Einzel-Rezept als JSON-Datei teilen</li>
+  <li><strong>Neu:</strong> Geschenk-Banner für neue Geschenk-Rezepte</li>
+</ul>
+
+<h3>Wochenplaner</h3>
+<ul>
+  <li>7 Tage je Mittag + Abend, plus beliebig viele Snacks</li>
+  <li>Rezept-Picker mit Tippfehler-toleranter Suche</li>
+  <li>Kalte Küche &amp; Snacks mit Mahlzeit-Typ-Vorbelegung</li>
+  <li>Tagesziel-Fortschrittsbalken (Kalorien, Eiweiß, Kohlenhydrate, Fett)</li>
+  <li>Wochen-Navigation vor und zurück</li>
+  <li>Standard-Portionen einstellbar</li>
+</ul>
+
+<h3>Shopping / Einkaufsliste</h3>
+<ul>
+  <li>Aggregation per Zutaten-ID — gleiche Zutat aus mehreren Rezepten in einer Zeile</li>
+  <li>Einheiten-Konvertierung („2 EL" + „100 ml" → „130 ml")</li>
+  <li>Tagesauswahl, Kategorien-Sortierung</li>
+  <li>„Vorhanden"-Markierung</li>
+  <li>Teilen als Text oder als .ics-Erinnerung für iOS Reminders</li>
+</ul>
+
+<h3>Einstellungen</h3>
+<ul>
+  <li>Tipps &amp; Tricks (gruppiert nach Bereich)</li>
+  <li>Wochenplaner-Defaults (Standard-Portionen)</li>
+  <li>Tagesziele für Kalorien, Eiweiß, Kohlenhydrate, Fett</li>
+  <li>Mahlzeit-Verteilung in % (Frühstück / Mittag / Abend / Snacks)</li>
+  <li>Erinnerungen (wöchentlich oder täglich)</li>
+  <li>Hinweise zum Browser-Import</li>
+  <li>Zutaten-Datenbank mit Sync-Status und Refresh</li>
+  <li><strong>Neu:</strong> Geschenk-Rezepte mit Toggle, Status und „Eigenes Rezept einsenden"</li>
+</ul>
+
+<h2>Was ihr gerne testen dürft</h2>
+
+<div class="highlight">
+<ul>
+  <li><strong>Geschenk-Banner anschauen</strong> — sobald ein neues Geschenk
+  verfügbar ist, sollte oben in der Rezepte-Liste der orange Banner erscheinen.
+  Tap drauf öffnet das Rezept; Tap auf X schließt nur. Wirkt das gut?</li>
+  <li><strong>Toggle prüfen</strong>: <em>Einstellungen → Geschenk-Rezepte →
+  Geschenke empfangen</em> aus → keine neuen Geschenke. Wieder an → beim
+  nächsten Cold-Start kommen ggf. ausstehende.</li>
+  <li><strong>„Eigenes Rezept einsenden"</strong>: Tap → Rezept-Liste-Modal →
+  ein eigenes Rezept auswählen → Mail-App öffnet sich mit fertiger Vorschlags-Mail.
+  Funktioniert auf eurem Setup?</li>
+  <li><strong>Gelöschte Geschenke</strong>: Wenn ihr ein erhaltenes Geschenk
+  manuell löscht, sollte es nicht beim nächsten Sync wieder auftauchen.</li>
+  <li><strong>Bestehende Daten</strong>: Eure eigenen Rezepte, Wochenpläne,
+  Einkaufslisten sollten unverändert sein.</li>
+</ul>
+</div>
+
+<h2>Bekannte Einschränkungen</h2>
+<ul>
+  <li>Sync-Prüfung läuft beim App-<strong>Start</strong>. Über
+  <em>Einstellungen → Geschenk-Rezepte → „Auf neue Geschenke prüfen"</em> könnt
+  ihr jederzeit manuell triggern.</li>
+  <li>Wenn auf eurem Gerät keine Mail-App eingerichtet ist (z.&nbsp;B. iOS Simulator
+  ohne Konto), schlägt der Einsende-Button mit einem Hinweis fehl.</li>
+  <li>Geschenke werden noch nicht zwischen verschiedenen Geräten synchronisiert —
+  jedes Gerät hat seinen eigenen Empfangs-Stand.</li>
+</ul>
+
+<h2>Feedback &amp; Bugs</h2>
+
+<div class="ask">
+<p>Wenn euch etwas auffällt — Bugs, Verständnisprobleme, fehlende Funktionen
+oder einfach nur ein „das hat mir gut gefallen" — schreibt mir gerne direkt
+zurück. Diesmal besonders: Würdet ihr ein eigenes Rezept einsenden? Wenn nicht,
+woran liegt's — Hürde zu hoch, kein Lieblingsrezept zur Hand, Zweifel an der
+Privatsphäre? Jedes Stichwort hilft.</p>
+</div>
+
+<p class="muted">Vielen Dank fürs Testen!<br>
+Jürgen</p>
+
+</body>
+</html>
