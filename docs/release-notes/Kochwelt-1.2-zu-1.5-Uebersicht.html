@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Kochwelt — Übersicht 1.2 → 1.5</title>
+  <style>
+    body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1c1917; line-height: 1.55; max-width: 720px; margin: 24px; }
+    h1 { color: #c2410c; font-size: 26pt; margin-bottom: 4px; }
+    h2 { color: #f97316; font-size: 16pt; margin-top: 26px; border-bottom: 2px solid #fed7aa; padding-bottom: 4px; }
+    p.tagline { color: #78716c; font-size: 12pt; margin-top: 0; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    .since { color: #9a3412; font-size: 10pt; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; }
+    .footer { color: #78716c; font-size: 11pt; margin-top: 28px; }
+  </style>
+</head>
+<body>
+
+<h1>Kochwelt — Was hat sich geändert?</h1>
+<p class="tagline">Übersicht der Änderungen zwischen Version 1.2 und 1.5</p>
+
+<p>Drei Feature-Releases sind seit 1.2 dazugekommen. Hier eine kompakte
+Zusammenfassung, gruppiert nach Themen statt nach Versionsnummern — damit du
+schnell siehst, was es Neues gibt.</p>
+
+<h2>🥕 Smarte Zutaten <span class="since">seit 1.3</span></h2>
+<ul>
+  <li><strong>Erkennung beim Tippen:</strong> Zutaten werden gegen eine zentrale
+  Datenbank (rund 108 Einträge) abgeglichen. Grüne ✅-Chips für bekannte, gelbe
+  ⚠️-Chips für unbekannte Zutaten direkt im Formular.</li>
+  <li><strong>Sammeldialog beim Speichern:</strong> Bei unbekannten Zutaten
+  kannst du einmalig Kategorie und Nährwerte pflegen — danach kennt die App sie
+  für alle weiteren Rezepte.</li>
+  <li><strong>Mehrzeiliges Zutaten-Format:</strong> Imports wie „75 g" / „Schinkenwürfel"
+  auf separaten Zeilen werden automatisch zusammengeführt; Anmerkungen wie
+  „à ca. 200 g" werden ausgeblendet.</li>
+</ul>
+
+<h2>📊 Nährwerte automatisch berechnen <span class="since">seit 1.3</span></h2>
+<ul>
+  <li>Button <strong>„Aus Zutaten berechnen"</strong> im Rezept-Formular: zeigt
+  eine Vorschau (z.&nbsp;B. „620 kcal · 16 g Eiweiß · 8/9 Zutaten erkannt").
+  Bei „Übernehmen" werden die Felder gefüllt — manuelle Werte werden nie
+  ohne Klick überschrieben.</li>
+  <li>Die mitgelieferten 40 Basis-Rezepte wurden nach dieser Methode neu
+  berechnet — die Werte sind konsistenter als vorher.</li>
+</ul>
+
+<h2>🛒 Klügere Einkaufsliste <span class="since">seit 1.3</span></h2>
+<ul>
+  <li>Gleiche Zutat aus mehreren Rezepten landet jetzt in <strong>einer</strong>
+  Zeile. „Olivenöl" und „Öl" werden als selbe Zutat erkannt.</li>
+  <li><strong>Einheiten werden umgerechnet:</strong> „2 EL" + „100 ml" + „1 Schuss"
+  → „130 ml Olivenöl (2 EL + 100 ml + 1 Schuss)".</li>
+  <li><strong>Stückzahlen werden mitgewogen:</strong> 3 Tomaten + 200 g Tomaten
+  → 560 g Tomaten.</li>
+</ul>
+
+<h2>🔍 Suche verträgt Tippfehler <span class="since">seit 1.3</span></h2>
+<p>In Rezeptliste, Planer-Picker und Vorlagen-Picker: „Hänchen" findet Hähnchen,
+„Olivnöl" findet Olivenöl. Funktioniert für Titel, Zutaten, Beschreibung
+und Kategorien.</p>
+
+<h2>☁️ Live-Updates der Zutaten-Datenbank <span class="since">seit 1.4</span></h2>
+<ul>
+  <li>Die Zutaten-Datenbank wird im Hintergrund aktualisiert (max. alle
+  6 Stunden). Wenn ein fehlender Alias bemerkt oder ein Nährwert korrigiert
+  wird, ist es beim nächsten Cold-Start bei dir.</li>
+  <li>Status + manueller Refresh unter <strong>Einstellungen → Zutaten-Datenbank</strong>.</li>
+  <li>Eigene Daten bleiben unangetastet — nur die Baseline-Liste wird ergänzt
+  oder korrigiert.</li>
+</ul>
+
+<h2>🎁 Geschenk-Rezepte <span class="since">neu in 1.5</span></h2>
+<ul>
+  <li>Ab und zu kommt ein <strong>kuratiertes neues Rezept</strong> als Geschenk
+  in deine Sammlung. Ein orangefarbener Banner in der Rezepte-Liste weist
+  drauf hin (Tap = öffnen, X = wegklicken).</li>
+  <li>Geschenk-Rezepte sind ganz normale Rezepte — editierbar, löschbar,
+  in den Wochenplan ziehbar.</li>
+  <li>Unter <strong>Einstellungen → Geschenk-Rezepte</strong>: Toggle zum
+  Aktivieren/Deaktivieren, manueller Refresh, Status-Anzeige.</li>
+  <li><strong>Eigenes Rezept einsenden:</strong> ein Lieblingsrezept aus deiner
+  Liste auswählen → die Mail-App öffnet sich mit fertiger Vorschlags-Mail.
+  Kein Account, kein Setup. Gute Vorschläge wandern als Geschenk zu allen.</li>
+</ul>
+
+<h2>🛠️ Kleines &amp; Aufräumarbeiten</h2>
+<ul>
+  <li>Tipp-System auf jedem Screen (<code>?</code>-Icon) und gesammelt unter
+  Einstellungen — bestand schon, Inhalte wurden ergänzt.</li>
+  <li>Foto-Bug behoben: manche neuen Rezepte wurden nicht gespeichert, weil
+  das Default-Foto Probleme machte.</li>
+  <li>Hochkant-Fotos sprengen das Karten-Layout in der Liste nicht mehr.</li>
+</ul>
+
+<p class="footer">
+Vollständige Tester-Notizen pro Version findest du in den Dateien
+<code>Kochwelt-v1.3.0.html</code>, <code>Kochwelt-v1.4.0.html</code> und
+<code>Kochwelt-v1.5.0.html</code>.
+</p>
+
+</body>
+</html>

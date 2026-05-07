@@ -1,0 +1,75 @@
+Kochwelt — Was hat sich geändert von 1.2 auf 1.5?
+
+Drei Feature-Releases sind seit 1.2 dazugekommen. Hier kompakt, gruppiert
+nach Themen statt nach Versionsnummern.
+
+
+🥕 SMARTE ZUTATEN  (seit 1.3)
+
+- Erkennung beim Tippen: Zutaten werden gegen eine zentrale Datenbank
+  (~108 Einträge) abgeglichen. Grüne Chips für bekannte, gelbe Chips für
+  unbekannte Zutaten direkt im Formular.
+- Sammeldialog beim Speichern: Bei unbekannten Zutaten kannst du einmalig
+  Kategorie und Nährwerte pflegen — danach kennt die App sie immer.
+- Mehrzeiliges Zutaten-Format: Imports wie "75 g" / "Schinkenwürfel" auf
+  separaten Zeilen werden automatisch zusammengeführt; Anmerkungen wie
+  "à ca. 200 g" werden ausgeblendet.
+
+
+📊 NÄHRWERTE AUTOMATISCH BERECHNEN  (seit 1.3)
+
+- Button "Aus Zutaten berechnen" im Rezept-Formular zeigt eine Vorschau
+  (z.B. "620 kcal · 16 g Eiweiß · 8/9 Zutaten erkannt"). Bei "Übernehmen"
+  werden die Felder gefüllt — manuelle Werte werden NIE ohne Klick
+  überschrieben.
+- Die 40 Basis-Rezepte wurden nach dieser Methode neu berechnet.
+
+
+🛒 KLÜGERE EINKAUFSLISTE  (seit 1.3)
+
+- Gleiche Zutat aus mehreren Rezepten landet in EINER Zeile. "Olivenöl"
+  und "Öl" werden als selbe Zutat erkannt.
+- Einheiten werden umgerechnet: "2 EL" + "100 ml" + "1 Schuss" wird zu
+  "130 ml Olivenöl (2 EL + 100 ml + 1 Schuss)".
+- Stückzahlen werden mitgewogen: 3 Tomaten + 200 g Tomaten = 560 g Tomaten.
+
+
+🔍 SUCHE VERTRÄGT TIPPFEHLER  (seit 1.3)
+
+In Rezeptliste, Planer-Picker und Vorlagen-Picker: "Hänchen" findet
+Hähnchen, "Olivnöl" findet Olivenöl. Funktioniert für Titel, Zutaten,
+Beschreibung und Kategorien.
+
+
+☁️ LIVE-UPDATES DER ZUTATEN-DATENBANK  (seit 1.4)
+
+- Die Zutaten-Datenbank wird im Hintergrund aktualisiert (max. alle
+  6 Stunden). Korrekturen oder neue Zutaten kommen automatisch beim
+  nächsten Cold-Start an.
+- Status + manueller Refresh unter Einstellungen → Zutaten-Datenbank.
+- Eigene Daten bleiben unangetastet.
+
+
+🎁 GESCHENK-REZEPTE  (neu in 1.5)
+
+- Ab und zu kommt ein kuratiertes neues Rezept als Geschenk in deine
+  Sammlung. Ein orangefarbener Banner in der Rezepte-Liste weist drauf hin
+  (Tap = öffnen, X = wegklicken).
+- Geschenk-Rezepte sind ganz normale Rezepte — editierbar, löschbar, in
+  den Wochenplan ziehbar.
+- Einstellungen → Geschenk-Rezepte: Toggle, manueller Refresh, Status.
+- "Eigenes Rezept einsenden": Rezept auswählen → Mail-App öffnet sich
+  mit fertiger Vorschlags-Mail. Kein Account, kein Setup nötig.
+
+
+🛠️ KLEINES & AUFRÄUMARBEITEN
+
+- Tipp-System auf jedem Screen (? - Icon) und gesammelt unter Einstellungen
+- Foto-Bug behoben (manche neuen Rezepte wurden nicht gespeichert)
+- Hochkant-Fotos sprengen das Karten-Layout nicht mehr
+
+
+Vollständige Tester-Notizen pro Version:
+- Kochwelt-v1.3.0.html
+- Kochwelt-v1.4.0.html
+- Kochwelt-v1.5.0.html
