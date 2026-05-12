@@ -50,7 +50,8 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-sharing"
+      "expo-sharing",
+      "./plugins/withChromebookSupport.js"
     ],
     "experiments": {
       "typedRoutes": true
