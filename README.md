@@ -258,6 +258,7 @@ Record<"YYYY-MM-DD", {
 - ✅ Tippfehler-tolerante Suche (Fuse.js, 1.3)
 - ✅ Live-Updates der Zutaten-Datenbank via Gist (1.4)
 - ✅ Geschenk-Rezepte mit Banner und Submission-Flow (1.5)
+- ✅ Android-Build & Play-Store-Einreichung (Internal Test, 1.5)
 
 ### In Planung
 - ⏳ iOS Share Extension (nativer Safari-Share-Sheet-Eintrag)
@@ -268,7 +269,9 @@ Record<"YYYY-MM-DD", {
 
 ---
 
-## Deployment (TestFlight / App Store)
+## Deployment (TestFlight & Play Store)
+
+### Builds erstellen
 
 ```bash
 # EAS CLI installieren
@@ -283,11 +286,22 @@ eas build --platform android --profile production
 ```
 
 Die `eas.json` nutzt `appVersionSource: "remote"` — die Versionsnummer wird zentral
-auf den Expo-Servern gehalten. Vor dem Build ggf. mit `eas build:version:set` synchron
-halten zur `app.json:expo.version`.
+auf den Expo-Servern gehalten. `expo.version` (z.&nbsp;B. `1.5.0`) kommt aus
+`app.json`, der numerische `versionCode` (Android) / `buildNumber` (iOS) wird
+automatisch hochgezählt. Vor dem ersten Android-Build pro Versions-Reihe ggf.
+mit `eas build:version:set --platform android` initialisieren.
 
-Tester-Doku zu jedem Release: `docs/release-notes/Kochwelt-v<version>.{html,docx,rtf}`
-plus Kurztext für TestFlight in `Kochwelt-v<version>-testflight.txt`.
+### Tester-Doku
 
-Für die Veröffentlichung im App Store wird ein [Apple Developer Account](https://developer.apple.com) (99 $/Jahr) benötigt.
-Für Google Play ein [Google Play Developer Account](https://play.google.com/console) (25 $ einmalig).
+| Zielsystem | Quelle |
+|---|---|
+| iOS / TestFlight | `docs/release-notes/Kochwelt-v<version>.{html,docx,rtf}` + Kurztext `Kochwelt-v<version>-testflight.txt` |
+| Android / Play Store | `docs/play-store/listing-de.md` (Store-Texte, Release-Notes, Fragebogen-Antworten) + `PRIVACY.md`/`privacy.html` (Datenschutzerklärung) |
+| Store-Grafiken | `docs/play-store/play-store-icon-512.png`, `feature-graphic.png` (Quelle: `feature-graphic.html`) |
+
+### Account-Voraussetzungen
+
+- iOS: [Apple Developer Account](https://developer.apple.com) (99 $/Jahr)
+- Android: [Google Play Developer Account](https://play.google.com/console) (25 $ einmalig)
+- Für neue Google-Play-Konten: vor erstem Production-Release ≥20 Tester über
+  ≥14 Tage im Geschlossenen Test verpflichtend (Google-Regel seit Nov 2023).
