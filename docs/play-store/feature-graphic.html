@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 1024px; height: 500px; overflow: hidden; }
+    body {
+      font-family: -apple-system, "Helvetica Neue", "Inter", Arial, sans-serif;
+      background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 55%, #fdba74 100%);
+      position: relative;
+    }
+
+    /* Decorative blobs */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.18;
+    }
+    .blob.b1 { width: 320px; height: 320px; background: #f97316; top: -80px; right: -60px; }
+    .blob.b2 { width: 200px; height: 200px; background: #ea580c; bottom: -60px; left: 380px; opacity: 0.12; }
+
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      margin-bottom: 28px;
+    }
+    .logo {
+      width: 110px;
+      height: 110px;
+      border-radius: 26px;
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(154, 52, 18, 0.18);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .title {
+      font-size: 72px;
+      font-weight: 800;
+      color: #1c1917;
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    .tagline {
+      font-size: 26px;
+      font-weight: 500;
+      color: #57534e;
+      max-width: 720px;
+      line-height: 1.35;
+      margin-bottom: 36px;
+    }
+    .tagline strong { color: #c2410c; font-weight: 700; }
+
+    .features {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: #ffffff;
+      border-radius: 24px;
+      font-size: 17px;
+      font-weight: 600;
+      color: #1c1917;
+      box-shadow: 0 2px 8px rgba(154, 52, 18, 0.08);
+      border: 1px solid rgba(253, 186, 116, 0.4);
+    }
+    .chip .ico { font-size: 22px; }
+
+    .badge {
+      position: absolute;
+      bottom: 32px;
+      right: 80px;
+      font-size: 14px;
+      color: #9a3412;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+
+  <div class="container">
+    <div class="brand-row">
+      <div class="logo"><img src="play-store-icon-512.png" alt="Kochwelt"></div>
+      <div class="title">Kochwelt</div>
+    </div>
+
+    <div class="tagline">
+      Deine persönliche Rezeptverwaltung mit <strong>smartem Wochenplaner</strong>
+      und automatischer Einkaufsliste.
+    </div>
+
+    <div class="features">
+      <div class="chip"><span class="ico">🥕</span> Smarte Zutaten</div>
+      <div class="chip"><span class="ico">📅</span> Wochenplaner</div>
+      <div class="chip"><span class="ico">🛒</span> Einkaufsliste</div>
+      <div class="chip"><span class="ico">📊</span> Auto-Nährwerte</div>
+      <div class="chip"><span class="ico">🎁</span> Geschenk-Rezepte</div>
+    </div>
+  </div>
+
+  <div class="badge">Offline · Werbefrei · Privat</div>
+</body>
+</html>
