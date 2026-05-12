@@ -343,3 +343,42 @@ textutil -convert rtf  -output Kochwelt-v<version>.rtf  Kochwelt-v<version>.html
 Der TestFlight-Kurztext wird per Hand geschrieben — er ist die einzige Doku, die viele Tester überhaupt sehen, daher knapp & klar formulieren.
 
 Bei Versions-Bump in `app.json` (`expo.version`) immer mitpflegen.
+
+---
+
+## Release-Workflow (Google Play Store)
+
+### Identitäts-Anker
+
+- **Android Package**: `com.jesser95.myCookingPlan` (gleich wie iOS-Bundle-ID). In `app.json` unter `android.package` — **niemals ändern**, einmalig im Play Store registriert.
+- **EAS `appVersionSource: "remote"`**: `expo.version` (z.B. `1.5.0`) kommt aus `app.json`. `versionCode` (Android-Build-Nummer) wird auf EAS-Servern gepflegt, durch `autoIncrement: true` pro Build hochgezählt. Vor erstem Build ggf. `eas build:version:set --platform android` ausführen.
+- **Datenschutzerklärung-URL** (Pflichtfeld in Play Console): `https://j-esser.github.io/kochwelt/play-store/privacy.html` (über GitHub Pages auf `/docs`-Ordner).
+
+### Store-Listing-Assets (`docs/play-store/`)
+
+| Datei | Verwendung |
+|---|---|
+| `play-store-icon-512.png` | App-Symbol (512×512 PNG) |
+| `feature-graphic.png` + `feature-graphic.html` | Hero-Bild (1024×500, HTML als Quelle für Re-Renders) |
+| `privacy.html` | Datenschutzerklärung über GitHub Pages |
+| `PRIVACY.md` | Markdown-Quelle der Datenschutzerklärung |
+| `listing-de.md` | Alle Store-Texte: Kurz-/Vollbeschreibung, Inhalts-Rating-Antworten, Daten-Sicherheits-Antworten, Release-Notes-Vorlage |
+
+Feature-Grafik neu rendern (nach HTML-Edit):
+
+```bash
+cd docs/play-store
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu --window-size=1024,500 --screenshot=feature-graphic.png "file://$(pwd)/feature-graphic.html"
+```
+
+### Track-Hierarchie
+
+1. **Interner Test** (≤100 Tester, kein Google-Review, sofort verfügbar) — für eigene Probe-Runde
+2. **Geschlossener Test** (≤2000 Tester, mit Review) — für 14-Tage-Beta-Phase
+3. **Production** — öffentlich
+
+**Wichtig für neue Entwicklerkonten**: Vor erstem Production-Release sind mindestens **20 Tester über 14 Tage** im Geschlossenen Test Pflicht (Google-Regel seit Nov 2023).
+
+### Daten-Sicherheits-Formular
+
+Alle relevanten Antworten: **Nein** (keine Daten gesammelt/geteilt). Begründung siehe `docs/play-store/listing-de.md`. Werbe-ID-Deklaration: **Nein, App nutzt keine Werbe-ID**. Gesundheits-App-Deklaration: **Nein, keine Health Connect / Gesundheitsdaten** (Nährwerte zählen nicht).
