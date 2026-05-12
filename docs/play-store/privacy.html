@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kochwelt — Datenschutzerklärung</title>
+  <style>
+    body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1c1917; line-height: 1.6; max-width: 720px; margin: 32px auto; padding: 0 20px; }
+    h1 { color: #c2410c; font-size: 28pt; margin-bottom: 4px; }
+    h2 { color: #f97316; font-size: 17pt; margin-top: 32px; border-bottom: 2px solid #fed7aa; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-top: 22px; margin-bottom: 6px; color: #1c1917; }
+    p.tagline { color: #78716c; font-size: 11pt; margin-top: 0; }
+    .summary { background: #fff7ed; padding: 14px 18px; border-left: 3px solid #f97316; border-radius: 4px; margin: 18px 0; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e7e5e4; }
+    th { background: #fafaf9; font-weight: 600; }
+    a { color: #c2410c; }
+    .meta { color: #78716c; font-size: 11pt; }
+    .footer { color: #78716c; font-size: 11pt; margin-top: 36px; padding-top: 18px; border-top: 1px solid #e7e5e4; }
+  </style>
+</head>
+<body>
+
+<h1>Datenschutzerklärung</h1>
+<p class="tagline">Kochwelt — Persönliche Rezeptverwaltung &amp; Wochenplaner</p>
+<p class="meta"><strong>Stand:</strong> 7. Mai 2026 &middot; <strong>Verantwortlich:</strong> Jürgen Esser &middot; <a href="mailto:juergen.esser.95@gmail.com">juergen.esser.95@gmail.com</a></p>
+
+<div class="summary">
+<strong>Kurz und ehrlich:</strong> Kochwelt ist eine reine Offline-App. Alle Daten (Rezepte, Wochenplan, Fotos, Einkaufslisten, Einstellungen) werden ausschließlich <strong>lokal auf deinem Gerät</strong> gespeichert. Es gibt <strong>keine Benutzerkonten, keine Cloud-Synchronisierung, kein Tracking und keine Werbung</strong>. Die App stellt nur dann eine Internetverbindung her, wenn du selbst eine Aktion auslöst oder wenn beim App-Start die zentrale Zutaten-Datenbank im Hintergrund aktualisiert wird — dabei werden <strong>keine personenbezogenen Daten übertragen</strong>.
+</div>
+
+<h2>1. Welche Daten werden gespeichert?</h2>
+<p>Alle Daten bleiben auf deinem Gerät (lokale Speicherung über AsyncStorage und das interne Dateisystem):</p>
+<ul>
+  <li>Deine Rezepte (Titel, Zutaten, Mengen, Nährwerte, Beschreibung, Notizen, Bewertung)</li>
+  <li>Selbst aufgenommene oder ausgewählte Rezept-Fotos</li>
+  <li>Dein Wochenplan (welche Rezepte an welchen Tagen)</li>
+  <li>Deine Einkaufslisten-Markierungen</li>
+  <li>Eigene Zutaten, die du beim Speichern eines Rezepts ergänzt hast</li>
+  <li>Persönliche Einstellungen (Standard-Portionen, Erinnerungs-Zeitpunkte, Nährwert-Ziele)</li>
+</ul>
+<p>Diese Daten werden <strong>nicht an einen Server übermittelt</strong> und sind auch nicht für andere Nutzer einsehbar.</p>
+
+<h2>2. Wann verbindet sich die App mit dem Internet?</h2>
+
+<h3>Beim App-Start (automatisch, im Hintergrund)</h3>
+<p>Höchstens einmal alle sechs Stunden lädt die App eine kuratierte Zutaten-Liste und ggf. ein „Geschenk-Rezept" als JSON-Dateien herunter:</p>
+<ul>
+  <li><strong>Zutaten-Datenbank</strong>: <a href="https://gist.github.com/j-esser/1f71eb989c5e7d2c189cf6bdb8255583">gist.github.com/j-esser/1f71eb989c5e7d2c189cf6bdb8255583</a></li>
+  <li><strong>Geschenk-Rezepte</strong>: <a href="https://gist.github.com/j-esser/5f7d11565cf87fba40812b5a789288fe">gist.github.com/j-esser/5f7d11565cf87fba40812b5a789288fe</a></li>
+</ul>
+<p>Beide Quellen sind öffentlich zugänglich und schreibgeschützt. Es werden keinerlei Daten von deinem Gerät an diese Quellen oder an mich gesendet. GitHub (Betreiber der Gists) kann die IP-Adresse deines Geräts beim Download protokollieren — siehe <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub-Datenschutzerklärung</a>.</p>
+<p>Die automatische Aktualisierung der Zutaten-Datenbank kann <strong>deaktiviert werden</strong> in <em>Einstellungen → Zutaten-Datenbank</em>, das Empfangen von Geschenk-Rezepten in <em>Einstellungen → Geschenk-Rezepte</em>.</p>
+
+<h3>Wenn du selbst eine Aktion auslöst</h3>
+<ul>
+  <li><strong>Import aus einer Rezept-Webseite</strong>: Wenn du eine URL eingibst oder aus der Zwischenablage übernimmst, lädt die App den HTML-Inhalt dieser Seite herunter, um das Rezept zu extrahieren. Der jeweilige Webseitenbetreiber sieht den Aufruf. Dabei werden <strong>keine Daten deinerseits übertragen</strong> — nur ein normaler Webseitenabruf.</li>
+  <li><strong>Rezept-Vorschlag einsenden</strong>: Wenn du auf „Eigenes Rezept einsenden" tippst, öffnet sich deine Mail-App mit einer vorbefüllten E-Mail an <code>kochwelt.lens838@passinbox.com</code>. Du musst die Mail aktiv versenden — es wird nichts ohne dein Zutun verschickt. Der Inhalt wird ausschließlich für die Kuratierung der Geschenk-Rezept-Sammlung verwendet.</li>
+  <li><strong>Bilder von externen Quellen</strong>: Die mitgelieferten Basis-Rezepte verwenden Bilder von <a href="https://unsplash.com">Unsplash</a>. Beim Anzeigen werden diese Bilder von Unsplash-Servern geladen.</li>
+</ul>
+
+<h2>3. Berechtigungen (Android)</h2>
+<p>Die App fragt nur Berechtigungen an, wenn sie für eine konkrete Aktion benötigt werden:</p>
+<ul>
+  <li><strong>Kamera</strong> — nur wenn du ein Rezept-Foto direkt aufnehmen möchtest. Fotos werden lokal gespeichert.</li>
+  <li><strong>Fotos &amp; Medien</strong> — nur wenn du ein bestehendes Foto aus deiner Galerie auswählen möchtest.</li>
+  <li><strong>Mitteilungen</strong> — nur wenn du Erinnerungen aktivierst. Die Mitteilungen werden lokal vom Gerät ausgelöst (keine Push-Benachrichtigungen über externe Server).</li>
+  <li><strong>Internetzugriff</strong> — siehe Abschnitt 2.</li>
+</ul>
+
+<h2>4. Drittanbieter</h2>
+<table>
+  <tr><th>Anbieter</th><th>Zweck</th><th>Übertragene Daten</th></tr>
+  <tr><td>GitHub (Microsoft Corporation)</td><td>Hosting der öffentlichen Zutaten- und Geschenk-Listen</td><td>IP-Adresse deines Geräts beim Abruf</td></tr>
+  <tr><td>Unsplash, Inc.</td><td>Bildquelle der Basis-Rezepte</td><td>IP-Adresse deines Geräts beim Bildaufruf</td></tr>
+</table>
+<p>Die App enthält <strong>keine</strong> Tracking-Bibliotheken, <strong>keine</strong> Werbenetzwerke und <strong>keine</strong> Analyse-Tools.</p>
+
+<h2>5. Speicherdauer</h2>
+<p>Solange die App auf deinem Gerät installiert ist, bleiben die lokalen Daten erhalten. Wird die App deinstalliert, werden alle lokalen Daten von deinem Gerät entfernt (Standard-Verhalten des Betriebssystems).</p>
+
+<h2>6. Deine Rechte</h2>
+<p>Weil keinerlei personenbezogene Daten an mich oder Dritte übermittelt werden, gibt es nichts, was ich auf Anfrage löschen, korrigieren oder herausgeben könnte. Du hast jederzeit volle Kontrolle:</p>
+<ul>
+  <li>Daten ansehen: Alle Daten sind in der App direkt sichtbar.</li>
+  <li>Daten löschen: Über die App-Funktionen (z.B. einzelne Rezepte löschen) oder durch Deinstallation der App.</li>
+</ul>
+
+<h2>7. Änderungen dieser Erklärung</h2>
+<p>Bei wesentlichen Änderungen wird das Datum oben aktualisiert. Die jeweils aktuelle Fassung ist über die im Play-Store-Eintrag verlinkte Adresse abrufbar.</p>
+
+<h2>8. Kontakt</h2>
+<p><strong>Jürgen Esser</strong><br>
+E-Mail: <a href="mailto:juergen.esser.95@gmail.com">juergen.esser.95@gmail.com</a></p>
+
+<div class="footer">
+Diese Datenschutzerklärung wird im Repository <a href="https://github.com/j-esser/kochwelt">github.com/j-esser/kochwelt</a> unter <code>docs/play-store/privacy.html</code> gepflegt.
+</div>
+
+</body>
+</html>
