@@ -1,0 +1,31 @@
+Kochwelt 1.5.1 — Bugfix-Update
+
+NEU
+- Android-Cold-Start spürbar schneller (lokale Kategorie-Bilder, Migrationen nach dem ersten Bildschirm)
+- Android: Rezepte direkt aus dem Browser teilen — "Teilen" → Kochwelt → Rezept landet im Import-Formular
+- Zwischenablage-Erkennung ruhiger: nur noch bei bekannten Rezept-Seiten (Chefkoch, eatsmarter, lecker, …) und jede URL nur einmal
+- Neue Sektion "App-Info" in Einstellungen — zeigt Version + Build-Nummer
+- Neue Rezepte bekommen ein lokales Kategorie-Bild statt eines generischen Netz-Bildes
+- Android-App-Icon ist endlich das echte Kochwelt-Logo (nicht mehr der blaue Platzhalter)
+- Hilfe-Symbol "?" im Import-Bereich reagiert zuverlässiger auf Android
+
+WAS BITTE TESTEN
+- Android: App deinstallieren, neu installieren — wie lange dauert es bis zur ersten Rezept-Liste?
+- Android: In Chrome auf einer Chefkoch-Seite "Teilen" → Kochwelt — landet das Rezept im Import?
+- Zwischenablage: Wikipedia-URL kopieren → Neues Rezept öffnen → KEIN Alert. Chefkoch-URL kopieren → Alert kommt.
+- Einstellungen → ganz nach unten: App-Info-Sektion zeigt Version + Build-Nummer.
+
+WAS BLEIBT GLEICH
+- Alle bisherigen Funktionen (Wochenplan, Einkaufsliste, Tipps, Geschenk-Rezepte, Zutaten-Datenbank-Sync)
+- Eure Daten lokal in der App, kein Cloud-Sync
+- Geschenk-Rezepte und Datenschutz: unverändert
+
+BEKANNT
+- iOS: Aus Safari "Teilen" → Kochwelt funktioniert noch nicht direkt (Share Extension geplant). Workaround: Link kopieren, dann Neues Rezept öffnen.
+- Bei Update von 1.5.0 → 1.5.1 werden die Bilder der Basis-Rezepte einmalig auf die neuen lokalen Bilder umgestellt. Eure eigenen Rezept-Fotos bleiben unverändert.
+
+FEEDBACK
+Mail an kochwelt.lens838@passinbox.com — gerne mit Version + Build-Nummer aus den Einstellungen.
+
+Danke fürs Testen!
+— Jürgen

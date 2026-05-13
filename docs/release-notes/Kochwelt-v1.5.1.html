@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Kochwelt 1.5.1 — Was ist neu</title>
+  <style>
+    body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1c1917; line-height: 1.55; max-width: 720px; margin: 24px; }
+    h1 { color: #c2410c; font-size: 28pt; margin-bottom: 4px; }
+    h2 { color: #f97316; font-size: 18pt; margin-top: 28px; border-bottom: 2px solid #fed7aa; padding-bottom: 4px; }
+    h3 { font-size: 13pt; margin-top: 18px; margin-bottom: 4px; color: #1c1917; }
+    p.tagline { color: #78716c; font-size: 12pt; margin-top: 0; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    .highlight { background: #fff7ed; padding: 12px 16px; border-left: 3px solid #f97316; border-radius: 4px; margin: 12px 0; }
+    .muted { color: #78716c; font-size: 11pt; }
+    .ask { background: #f0f9ff; padding: 12px 16px; border-left: 3px solid #0ea5e9; border-radius: 4px; margin: 12px 0; }
+  </style>
+</head>
+<body>
+
+<h1>Kochwelt 1.5.1</h1>
+<p class="tagline">Persönliche Rezeptverwaltung &amp; Wochenplaner — Bugfix-Update Mai 2026</p>
+
+<p>Liebe Tester,</p>
+
+<p>1.5.1 ist ein Wartungsrelease, das vor allem den Android-Stand verbessert.
+Im Mittelpunkt: ein schnellerer und stabilerer App-Start, das richtige
+App-Icon, ein neuer „Aus Browser teilen"-Weg auf Android, eine entspanntere
+Zwischenablage-Erkennung und ein paar Detail-Verbesserungen, die das tägliche
+Arbeiten mit der App angenehmer machen.</p>
+
+<h2>Was ist neu in 1.5.1</h2>
+
+<h3>Android-Start spürbar schneller</h3>
+<p>Auf Android — speziell Chromebook — hat der erste Start nach Installation
+bisher mehrere Minuten gedauert und teilweise einen „App reagiert nicht"-Hinweis
+gezeigt. In 1.5.1 startet die App nun zügig, weil die 40 Basis-Rezepte ihre
+Bilder lokal aus der App ziehen statt aus dem Netz, und Hintergrund-Migrationen
+erst <em>nach</em> dem ersten Bildschirm laufen.</p>
+
+<h3>Rezepte aus dem Browser teilen (Android)</h3>
+<p>Wenn ihr auf <strong>Chefkoch</strong> (oder einer anderen Rezept-Seite) im
+Browser ein Rezept geöffnet habt, könnt ihr es jetzt direkt teilen:
+„Teilen" → <strong>Kochwelt</strong> auswählen → die App öffnet sich, springt
+direkt in „Neues Rezept" und zieht die URL automatisch in den Import.</p>
+
+<p class="muted">Auf iOS gibt es diesen Weg noch nicht (Safari Share Extension
+ist für eine spätere Version geplant). iOS-Nutzer nutzen weiterhin die
+Zwischenablage-Erkennung.</p>
+
+<h3>Zwischenablage-Erkennung ist ruhiger</h3>
+<p>Beim Öffnen von „Neues Rezept" wurde bisher <em>jede</em> URL in der
+Zwischenablage als Import-Vorschlag angezeigt — auch Wikipedia-Links oder
+Tracking-Code aus E-Mails. Ab 1.5.1:</p>
+<ul>
+  <li>Es kommt <strong>nur</strong> noch ein Alert, wenn die URL von einer
+  bekannten Rezept-Seite stammt (chefkoch.de, eatsmarter.de, lecker.de,
+  küchengötter.de, Springlane, Sally's Blog, Kitchen Stories, …).</li>
+  <li>Jede URL wird höchstens <strong>einmal</strong> vorgeschlagen — wenn
+  ihr „Abbrechen" tippt, kommt der Alert nicht wieder, bis ihr was Neues
+  kopiert habt.</li>
+</ul>
+
+<h3>App-Info in den Einstellungen</h3>
+<p>Ganz unten unter <strong>Einstellungen</strong> gibt es jetzt eine
+Sektion <strong>App-Info</strong> mit der installierten Version und der
+Build-Nummer. Praktisch, um beim Feedback eindeutig sagen zu können, welcher
+Stand auf eurem Gerät läuft.</p>
+
+<h3>Bilder bei neu angelegten Rezepten</h3>
+<p>Bisher bekam jedes neu angelegte Rezept ein generisches „Kochutensilien"-
+Bild aus dem Netz vorgeschlagen. In 1.5.1 nehmen wir stattdessen ein lokales
+Kategorie-Bild, das zur gewählten Kategorie passt (Pasta, Curry, Vegetarisch
+…) — kein Ladevorgang nötig, und es passt thematisch oft besser.</p>
+
+<h3>Kleinere Verbesserungen</h3>
+<ul>
+  <li><strong>Hilfe-Symbol</strong> (das kleine „?"-Icon in der Rezept-
+  Eingabe) reagierte auf Android manchmal nicht. Touch-Bereich ist jetzt
+  größer und reagiert zuverlässig.</li>
+  <li><strong>App-Icon</strong>: Auf Android (inkl. Chromebook) wurde
+  versehentlich ein blaues Platzhalter-Icon angezeigt. Jetzt ist es das
+  richtige Kochwelt-Logo.</li>
+</ul>
+
+<h2>Was ihr besonders gerne testen dürft</h2>
+
+<ul>
+  <li><strong>Android-Cold-Start:</strong> App komplett deinstallieren,
+  neu installieren und stoppen, wie lange es bis zur ersten Rezept-Liste
+  dauert. Sollte deutlich unter dem alten Stand sein.</li>
+  <li><strong>Share aus Chrome:</strong> Auf einer Rezept-Seite die
+  Browser-Teilen-Funktion nutzen, Kochwelt auswählen und prüfen, ob das
+  Rezept sauber importiert wird (vor allem Zutaten + Zubereitung).</li>
+  <li><strong>Zwischenablage:</strong> Einmal eine Nicht-Rezept-URL
+  kopieren (z.&nbsp;B. Wikipedia) und „Neues Rezept" öffnen — es sollte
+  <em>kein</em> Alert kommen. Dann eine Chefkoch-URL kopieren — Alert sollte
+  kommen.</li>
+  <li><strong>App-Info-Sektion:</strong> Einstellungen → ganz nach unten
+  scrollen — die Build-Nummer ist beim Feedback hilfreich.</li>
+</ul>
+
+<h2>Bekannte Einschränkungen</h2>
+
+<ul>
+  <li>iOS-Share aus Safari über das System-Teilen-Menü erscheint noch nicht
+  als Eintrag (geplant für eine spätere Version, Workaround: Link kopieren
+  → App öffnen).</li>
+  <li>Wenn ihr Kochwelt schon vor 1.5.1 installiert hattet und auf 1.5.1
+  aktualisiert, werden die Bilder eurer Basis-Rezepte beim ersten Start
+  einmalig auf lokale Bilder umgestellt. Eigene Fotos bleiben unangetastet.</li>
+</ul>
+
+<h2>Feedback</h2>
+
+<div class="ask">
+  <p style="margin: 0;"><strong>Falls etwas schief läuft</strong> oder
+  euch ein Detail stört: gerne per Mail an
+  <a href="mailto:kochwelt.lens838@passinbox.com">kochwelt.lens838@passinbox.com</a>
+  — am besten mit Version + Build-Nummer aus den Einstellungen.</p>
+</div>
+
+<p class="muted">— Jürgen</p>
+
+</body>
+</html>

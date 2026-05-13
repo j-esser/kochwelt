@@ -71,7 +71,7 @@ app/
 |---|---|
 | `components/RecipeForm.tsx` | Formular für Erstellen/Bearbeiten + URL-/Vorlage-/JSON-Import + Baseline-Chips + Nährwert-Auto-Berechnung |
 | `components/RecipeImage.tsx` | Bild via `expo-image` (Memory + Disk Cache); Props: `uri`, `recipeId`, `category`. Bei leerer `uri` → lokales Kategorie-Asset via `resolveCategoryPhoto()`, sonst Fallback. |
-| `components/TipButton.tsx` | `?`-Icon (`help-circle-outline`), öffnet `TipModal` für einen Kontext |
+| `components/TipButton.tsx` | `?`-Icon (`help-circle-outline`), öffnet `TipModal` für einen Kontext. Nutzt `Pressable` + explizite minWidth/minHeight 32 + padding für robuste Touch-Area auf Android. |
 | `components/TipModal.tsx` | Bottom-Sheet mit Tipps (Cream-Orange-Boxen) |
 | `components/UnknownIngredientsModal.tsx` | Sammel-Dialog beim Speichern: pro unbekannter Zutat Name/Kategorie/Nährwerte pflegen → Eintrag in `kochwelt_user_ingredients` |
 | `components/GiftBanner.tsx` | Orange Banner in der Rezepte-Liste, zeigt das nächste ungelesene Geschenk-Rezept; Tap = öffnen + read, X = nur read |
@@ -159,10 +159,10 @@ Migrationen müssen **runtime-fallback-tolerant** sein (siehe Memory `feedback_m
   - **Als Text**: `Share.share()` → formatierter Klartext für WhatsApp, Mail etc.
   - **Als Erinnerung**: `shoppingListToICS()` → `.ics`-Datei → `Sharing.shareAsync()` → iOS Reminders via AirDrop
 
-### Browser-Import / Deep Link — `components/RecipeForm.tsx`
-- **Clipboard-Erkennung**: Beim Öffnen von „Neues Rezept" wird die Zwischenablage geprüft. Liegt eine gültige URL dort, wird per Alert angeboten, das Rezept sofort zu importieren. Kein Setup nötig.
+### Browser-Import / Deep Link / Share-Intent — `components/RecipeForm.tsx`
+- **Clipboard-Erkennung** (1.5.1): Beim Öffnen von „Neues Rezept" wird die Zwischenablage geprüft. Es wird **nur** für URLs von bekannten Rezept-Domains (`RECIPE_DOMAINS`-Whitelist: chefkoch.de, eatsmarter.de, lecker.de, kuechengoetter.de, ...) ein Import-Alert angeboten — und jede URL höchstens einmal (Dedup über AsyncStorage-Key `kochwelt_last_clipboard_url`).
 - **Deep Link**: `kochwelt://recipe/new?importUrl=<encoded-url>` öffnet das Formular und startet den Import automatisch (mit Lade-Overlay). Wird von `new.tsx` via `useLocalSearchParams` gelesen.
-- **Android**: Intent Filter in `app.json` für `SEND / text/plain` → Kochwelt erscheint nativ im Android Share Sheet
+- **Android Share-Sheet** (1.5.1): Über `expo-share-intent` (Config-Plugin in `app.json`). In `app/_layout.tsx` läuft ein `useShareIntent()`-Hook: wenn die App aus einem SEND/text-Intent (z.B. Chefkoch → Teilen → Kochwelt) gestartet wird, extrahiert ein Effect die URL aus `shareIntent.webUrl` (oder via Regex aus `shareIntent.text`) und navigiert zu `/recipe/new?importUrl=...`. `resetShareIntent()` danach, damit der Intent nicht erneut feuert.
 - **iOS**: Kein nativer Share-Sheet-Eintrag ohne Share Extension. Clipboard-Flow ist der empfohlene Weg. Share Extension ist für eine spätere Version geplant.
 
 ### Vorlage-/Import-Modal — `components/RecipeForm.tsx`
@@ -187,7 +187,8 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 ### Foto-Handling
 - Lokale User-Fotos: `FileSystem.documentDirectory + 'recipe_photos/' + recipeId + '.jpg'`
 - Baseline-Rezepte haben **kein `photo`-Feld** — `RecipeImage` löst sie zur Render-Zeit via `resolveCategoryPhoto(recipeId, category)` gegen lokale Assets in `assets/recipe-photos/` auf (kein Netzwerk-Roundtrip beim Erst-Start).
-- Default-Foto für neue Rezepte: HTTPS-URL (Unsplash) → `RecipeForm.handleSave` ruft `saveRecipePhoto` **nur** für `file://`-URIs auf, sonst wird die URI direkt als `photo` übernommen. Wichtig: HTTPS-URL durch `copyAsync` würde sonst werfen und das Speichern komplett abbrechen.
+- **Neue Rezepte** (1.5.1): kein Unsplash-Default mehr. `photoUri` startet mit `null`; wenn der User kein Foto wählt, wird `photo: undefined` gespeichert und `RecipeImage` zieht das lokale Kategorie-Bild basierend auf `recipe.categories[0]`.
+- User-Foto-Save: `RecipeForm.handleSave` ruft `saveRecipePhoto` **nur** für `file://`-URIs auf, sonst wird die URI direkt als `photo` übernommen. Wichtig: HTTPS-URL durch `copyAsync` würde sonst werfen und das Speichern komplett abbrechen.
 - `RecipeImage.tsx` Auflösung: `uri` gesetzt → direkt nutzen; sonst `recipeId` → `resolveCategoryPhoto()`; sonst `assets/images/food-fallback.jpg`.
 - Web: FileSystem nicht verfügbar → Foto-Upload deaktiviert
 - Listen-Cards (`rezepte.tsx`, `pick.tsx`) verwenden **fixe Höhe** (`height: 180` / `160`) statt `aspectRatio`, damit Hochkant-Fotos das Layout nicht sprengen.
@@ -293,6 +294,19 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 
 **Wichtig — Asset-IDs nicht persistieren**: Die `number`-Werte aus `require()` sind nur zur Render-Zeit gültig (Metro rotiert IDs bei jedem Build). Sie dürfen NIEMALS nach AsyncStorage geschrieben werden. `Recipe.photo` bleibt typmäßig `string | undefined`. Auflösung passiert nur im `RecipeImage`-Render via stabilen `recipeId` + `category`-Props.
 
+### App-Info-Anzeige in den Einstellungen (1.5.1) — `app/(tabs)/einstellungen.tsx`
+Unterste Sektion „App-Info" zeigt Version + Build-Nummer über `expo-application`:
+- `Application.nativeApplicationVersion` (z.B. `1.5.1`) — entspricht `expo.version` aus `app.json`
+- `Application.nativeBuildVersion` — Android `versionCode` / iOS `buildNumber`. Wichtig, weil `expo.version` bei mehreren Builds gleich bleiben kann (nur Bugfix) — die Build-Nummer ist eindeutig pro EAS-Build.
+- Werte werden direkt aus nativen App-Metadaten gelesen, daher nur in nativen Builds sichtbar (in Expo Go / dev-server: `?`).
+- Vorgänger-Implementierung nutzte `expo-constants` (`nativeBuildVersion` deprecated seit SDK 49), das mit `appVersionSource: "remote"` `null` lieferte — nicht mehr verwenden.
+
+### Android Adaptive Icon (1.5.1) — `assets/images/android-icon-foreground.png`
+- **Nur** `adaptiveIcon.foregroundImage` wird auf Android gerendert — `expo.icon` ist iOS-only. Beim Update 1.5.1 wurde ein Expo-Default-Placeholder (blaues „A") entdeckt und durch das echte Logo ersetzt.
+- Generiert via Python/Pillow aus `assets/icon.png`: 1024×1024 Canvas, Logo zentriert auf 700×700 mit transparentem Padding (Android safe zone ≈ 66% der zentralen Fläche → 700/1024 ist sicher gegen runde Launcher-Masken).
+- `backgroundColor: "#ffffff"`, kein `backgroundImage` mehr (alter Placeholder waren Hilfslinien!), kein `monochromeImage` (Themed Icons nur sinnvoll mit echter Silhouette, die das voll gefüllte Logo nicht hergibt).
+- Wenn das Icon getauscht werden soll: Python-Snippet aus dem Commit `d4c97a8` wiederverwenden.
+
 ### Geschenk-Rezepte (Stufe 1) — `services/giftRecipes.ts`
 **Idee**: Kuratierte „Geschenk-Rezepte" werden über einen separaten Gist verteilt. Beim App-Start synct die App, importiert fällige Geschenke via `saveRecipe()` und merkt sich gelieferte IDs in `kochwelt_gifts_delivered`. Ein Banner auf der Rezepte-Liste informiert über ungelesene Geschenke.
 
@@ -337,8 +351,9 @@ Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `
 ## Bekannte Einschränkungen
 
 - Expo Go inkompatibel mit iOS 26+ → iOS Simulator (Xcode) nutzen
+- Expo Go inkompatibel mit `expo-share-intent` (native Modul) → für Android-Share-Tests Custom Dev Client oder Release Build verwenden
 - User-Daten (Rezepte, Wochenplan, eigene Zutaten) nur lokal in AsyncStorage. Nur die Baseline-Zutaten-Liste wird via Gist read-only synchronisiert.
-- iOS Share Extension (direkter Safari-Share-Sheet-Eintrag) noch nicht implementiert
+- iOS Share Extension (direkter Safari-Share-Sheet-Eintrag) noch nicht implementiert (Android funktioniert über `expo-share-intent` seit 1.5.1)
 
 ---
 

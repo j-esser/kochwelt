@@ -259,6 +259,11 @@ Record<"YYYY-MM-DD", {
 - ✅ Live-Updates der Zutaten-Datenbank via Gist (1.4)
 - ✅ Geschenk-Rezepte mit Banner und Submission-Flow (1.5)
 - ✅ Android-Build & Play-Store-Einreichung (Internal Test, 1.5)
+- ✅ Cold-Start-Optimierung & lokale Kategorie-Bilder (1.5.1)
+- ✅ Android Share-Sheet: Rezepte aus Chrome/Chefkoch teilen → direkter Import (1.5.1, via `expo-share-intent`)
+- ✅ Clipboard-Erkennung mit Rezept-Domain-Whitelist + Dedup (1.5.1)
+- ✅ App-Info-Sektion in Einstellungen (Version + Build-Nummer, 1.5.1)
+- ✅ Adaptive Icon mit echtem Kochwelt-Logo (1.5.1)
 
 ### In Planung
 - ⏳ iOS Share Extension (nativer Safari-Share-Sheet-Eintrag)
