@@ -4,8 +4,32 @@ import {
   ActivityIndicator, Image, Platform, Modal, Pressable,
   StyleSheet, FlatList, findNodeHandle,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import * as Clipboard from 'expo-clipboard';
+
+// Bekannte Rezept-Domains — nur URLs von diesen Hosts werden beim Öffnen von
+// "Neues Rezept" automatisch als Import-Vorschlag angeboten.
+const RECIPE_DOMAINS = [
+  'chefkoch.de', 'eatsmarter.de', 'kochbar.de', 'kuechengoetter.de',
+  'essen-und-trinken.de', 'lecker.de', 'gutekueche.at', 'gutekueche.ch',
+  'daskochrezept.de', 'emmikochteinfach.de', 'sallys-blog.de',
+  'springlane.de', 'rezeptwelt.de', 'kitchenstories.com', 'maggi.de',
+  'einfachbacken.de', 'kochenohnekohlenhydrate.de', 'thermomix.de',
+  'swissmilk.ch', 'koch-mit.de', 'food-with-love.com', 'kochkarussell.com',
+];
+const CLIPBOARD_LAST_KEY = 'kochwelt_last_clipboard_url';
+
+function isRecipeUrl(text: string): boolean {
+  try {
+    const url = new URL(text);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    const host = url.hostname.replace(/^www\./, '');
+    return RECIPE_DOMAINS.some(d => host === d || host.endsWith('.' + d));
+  } catch {
+    return false;
+  }
+}
 import { useRouter, Stack } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -164,23 +188,25 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importUrl]);
 
-  // Clipboard-Erkennung: URL beim Öffnen anbieten (nur bei neuem Rezept, nicht Web)
+  // Clipboard-Erkennung: nur URLs von bekannten Rezept-Sites anbieten, und jede
+  // URL höchstens einmal (Dedup via AsyncStorage). Auf Web ohnehin deaktiviert.
   useEffect(() => {
     if (initial || importUrl || Platform.OS === 'web') return;
     (async () => {
       try {
-        const text = await Clipboard.getStringAsync();
-        if (text && /^https?:\/\/.+\..+/i.test(text.trim())) {
-          const url = text.trim();
-          Alert.alert(
-            'Rezept-URL erkannt',
-            `Soll das Rezept von dieser Seite importiert werden?\n\n${url}`,
-            [
-              { text: 'Abbrechen', style: 'cancel' },
-              { text: 'Importieren', onPress: () => handleUrlImport(url) },
-            ]
-          );
-        }
+        const text = (await Clipboard.getStringAsync())?.trim();
+        if (!text || !isRecipeUrl(text)) return;
+        const lastSeen = await AsyncStorage.getItem(CLIPBOARD_LAST_KEY);
+        if (lastSeen === text) return;
+        await AsyncStorage.setItem(CLIPBOARD_LAST_KEY, text);
+        Alert.alert(
+          'Rezept-URL erkannt',
+          `Soll das Rezept von dieser Seite importiert werden?\n\n${text}`,
+          [
+            { text: 'Abbrechen', style: 'cancel' },
+            { text: 'Importieren', onPress: () => handleUrlImport(text) },
+          ]
+        );
       } catch { /* Clipboard-Zugriff nicht verfügbar */ }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
