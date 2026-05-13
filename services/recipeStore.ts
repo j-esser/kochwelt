@@ -66,6 +66,11 @@ export async function seedIfEmpty(): Promise<void> {
     photo: r.photo ?? BASELINE_PHOTO_MAP[r.id],
   }));
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(withPhotos));
+  // Version-Keys gleich mitsetzen — beim Erst-Install sind die Baseline-Daten bereits
+  // im aktuellen Stand. Verhindert, dass patchBaselineIngredients/patchBaselinePhotos
+  // beim ersten Start nochmal voll durchläuft.
+  await AsyncStorage.setItem(INGREDIENTS_VERSION_KEY, INGREDIENTS_VERSION);
+  await AsyncStorage.setItem(PHOTO_VERSION_KEY, PHOTO_VERSION);
 }
 
 // Versionsnummer – erhöhen erzwingt komplette Neu-Migration aller Baseline-Fotos

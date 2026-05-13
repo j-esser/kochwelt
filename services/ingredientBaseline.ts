@@ -116,6 +116,41 @@ export function parseIngredientText(line: string): IngredientMatch {
   return { rawName, quantity, unit };
 }
 
+// Index-Cache pro Baseline-Referenz. Rebuild nur, wenn ein neuer Array-Identity
+// reinkommt (z.B. nach Remote-Cache-Update via baselineSync). Innerhalb einer
+// Migration mit ~400 Aufrufen wird sonst der Index 400× gebaut — bei zehntausenden
+// Regex-Kompilierungen pro Aufruf ist das der Hauptkostenfaktor des Cold Starts.
+type FuzzyCandidate = { regex: RegExp; len: number };
+type FuzzyEntry = { b: BaselineIngredient; candidates: FuzzyCandidate[] };
+
+let _exactIndex: Map<string, BaselineIngredient> | null = null;
+let _fuzzyTable: FuzzyEntry[] | null = null;
+let _lastBaselineRef: BaselineIngredient[] | null = null;
+
+function ensureIndexes(baseline: BaselineIngredient[]): void {
+  if (_lastBaselineRef === baseline && _exactIndex) return;
+  const exact = new Map<string, BaselineIngredient>();
+  const fuzzy: FuzzyEntry[] = [];
+  for (const b of baseline) {
+    const candidates: FuzzyCandidate[] = [];
+    const allNames = [b.name, ...(b.aliases ?? [])];
+    for (const c of allNames) {
+      const lower = c.toLocaleLowerCase('de-DE');
+      // Exakt-Match-Index: bei doppelten Aliases gewinnt die erste Baseline
+      if (!exact.has(lower)) exact.set(lower, b);
+      const escaped = lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      candidates.push({
+        regex: new RegExp(`(?:^|\\s)${escaped}(?:$|\\s|n\\b|en\\b|er\\b)`),
+        len: lower.length,
+      });
+    }
+    fuzzy.push({ b, candidates });
+  }
+  _exactIndex = exact;
+  _fuzzyTable = fuzzy;
+  _lastBaselineRef = baseline;
+}
+
 export function findBaselineMatch(
   rawName: string,
   baseline: BaselineIngredient[],
@@ -123,20 +158,18 @@ export function findBaselineMatch(
   const stripped = stripFillers(rawName).toLocaleLowerCase('de-DE');
   if (!stripped) return undefined;
 
-  for (const b of baseline) {
-    if (b.name.toLocaleLowerCase('de-DE') === stripped) return b;
-  }
-  for (const b of baseline) {
-    if (b.aliases?.some(a => a.toLocaleLowerCase('de-DE') === stripped)) return b;
-  }
+  ensureIndexes(baseline);
+
+  // 1) Exakt-Match auf Name oder Alias — O(1)
+  const hit = _exactIndex!.get(stripped);
+  if (hit) return hit;
+
+  // 2) Fuzzy-Substring mit pre-compiled Regexes — längster Treffer gewinnt
   let best: { b: BaselineIngredient; len: number } | undefined;
-  for (const b of baseline) {
-    const candidates = [b.name, ...(b.aliases ?? [])].map(c => c.toLocaleLowerCase('de-DE'));
-    for (const c of candidates) {
-      const escaped = c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp(`(?:^|\\s)${escaped}(?:$|\\s|n\\b|en\\b|er\\b)`);
-      if (re.test(stripped)) {
-        if (!best || c.length > best.len) best = { b, len: c.length };
+  for (const entry of _fuzzyTable!) {
+    for (const cand of entry.candidates) {
+      if (cand.regex.test(stripped) && (!best || cand.len > best.len)) {
+        best = { b: entry.b, len: cand.len };
       }
     }
   }

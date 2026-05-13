@@ -2,6 +2,7 @@ import '../global.css';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { InteractionManager } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { seedIfEmpty, patchBaselinePhotos, patchBaselineIngredients } from '../services/recipeStore';
 import { syncBaselineIfNeeded } from '../services/baselineSync';
@@ -18,18 +19,25 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   useEffect(() => {
     (async () => {
+      // Nur seedIfEmpty bleibt im blockierenden Pfad — sicherzustellen, dass beim
+      // allerersten Start die Daten existieren bevor UI rendert. Auf Bestandsdaten
+      // ist es ein No-Op (ein einzelner AsyncStorage-getItem-Check).
+      const t0 = Date.now();
       await seedIfEmpty();
-      await patchBaselineIngredients();
-      await patchBaselinePhotos();
+      if (__DEV__) console.log('[boot] seeded', Date.now() - t0, 'ms');
       SplashScreen.hideAsync();
-      // Baseline-Sync läuft fire-and-forget: blockiert den Start nicht und schreibt nur,
-      // wenn der Gist eine neuere Version meldet. User-Eingaben bleiben unangetastet.
-      syncBaselineIfNeeded().catch(() => { /* still ignored */ });
-      // Gift-Sync + Lieferung: erst Cache aktualisieren, dann fällige Geschenke ausliefern.
-      // Banner erscheint beim nächsten Render der Rezepte-Liste.
-      syncGiftsIfNeeded()
-        .then(() => deliverPendingGifts())
-        .catch(() => { /* still ignored */ });
+
+      // Migrations + Syncs als deferred Work nach erstem Frame.
+      // Side-Effects laufen, während User die App schon nutzen kann.
+      InteractionManager.runAfterInteractions(async () => {
+        try {
+          await patchBaselineIngredients();
+          await patchBaselinePhotos();
+          if (__DEV__) console.log('[boot] migrations done', Date.now() - t0, 'ms');
+        } catch {/* still */}
+        syncBaselineIfNeeded().catch(() => {});
+        syncGiftsIfNeeded().then(() => deliverPendingGifts()).catch(() => {});
+      });
     })();
   }, []);
 

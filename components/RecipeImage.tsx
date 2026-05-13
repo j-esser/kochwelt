@@ -1,31 +1,33 @@
-import { useState } from 'react';
-import { Image, type ImageStyle, type StyleProp } from 'react-native';
+import { Image, type ImageStyle, type ImageContentFit } from 'expo-image';
+import { type StyleProp } from 'react-native';
 
 const FALLBACK = require('../assets/images/food-fallback.jpg');
 
 interface Props {
-  uri: string | undefined | null;
+  uri: string | number | undefined | null;
   style: StyleProp<ImageStyle>;
-  resizeMode?: 'cover' | 'contain' | 'stretch' | 'center';
+  resizeMode?: ImageContentFit;
 }
 
 /**
- * Zeigt ein Rezept-Foto. Fällt bei fehlender oder kaputterURL
- * automatisch auf das lokale Fallback-Bild zurück.
+ * Zeigt ein Rezept-Foto via expo-image (Memory + Disk Cache).
+ * Fallback auf lokales food-fallback.jpg, wenn `uri` leer ist oder Laden scheitert.
+ *
+ * `uri` kann sein:
+ *   - string (file://… oder https://…)
+ *   - number (asset reference via require()) — wird ab Phase 2 (Kategorie-Bilder) genutzt
+ *   - null/undefined → Fallback
  */
 export function RecipeImage({ uri, style, resizeMode = 'cover' }: Props) {
-  const [failed, setFailed] = useState(false);
-
-  if (!uri || failed) {
-    return <Image source={FALLBACK} style={style} resizeMode={resizeMode} />;
-  }
-
+  const source = uri && uri !== '' ? uri : FALLBACK;
   return (
     <Image
-      source={{ uri }}
+      source={source}
       style={style}
-      resizeMode={resizeMode}
-      onError={() => setFailed(true)}
+      contentFit={resizeMode}
+      cachePolicy="memory-disk"
+      transition={120}
+      placeholder={FALLBACK}
     />
   );
 }
