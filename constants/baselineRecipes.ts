@@ -1,84 +1,8 @@
 import type { Recipe } from "../services/recipeStore";
 
-// Kuratierte Unsplash-Fotos passend zum jeweiligen Rezept (verifizierte IDs)
-const U = (id: string) => `https://images.unsplash.com/photo-${id}?w=800&q=80`;
-
-// Nur verifiziert funktionierende Unsplash-IDs
-const FOOD: Record<string, string> = {
-  quiche:        U('1571091718767-18b5b1457add'), // Quiche/Tart
-  gemuese:       U('1540420773420-3366772f4999'), // Geröstetes Gemüse
-  gruen:         U('1512621776951-a57df7302669'), // Grünes Gemüse
-  stew:          U('1547592180-85f173990554'),    // Eintopf/Suppe
-  grainBowl:     U('1546069901-ba9599a7e63c'),   // Gemüse-Bowl
-  asianFood:     U('1455619452474-d2be8b1e70cd'), // Asia-Pfanne
-  burger:        U('1568901346375-23c9450c58cd'), // Burger
-  tomateSauce:   U('1621996346565-e3dbc646d9a9'), // Tomaten-Sauce
-  buntesGemuese: U('1490645935967-10de6ba17061'), // Buntes Gemüse
-  pasta:         U('1551183053-bf91798d047f'),    // Pasta
-  spaghetti:     U('1563379926898-05f4575a45d8'), // Spaghetti
-  cremePasta:    U('1555949258-eb67b1ef0ceb'),    // Cremige Pasta
-  pesto:         U('1473093226555-0d10be9010e3'), // Pasta/Pesto
-  lasagne:       U('1574071318508-1cdbab80d002'), // Lasagne
-  indischCurry:  U('1565557623262-b51c2513a641'), // Indisches Curry
-  linsencurry:   U('1546069901-ba9599a7e63c'),   // Linsen-Curry
-  risotto:       U('1476124369491-e7addf5db371'), // Risotto
-  kurbis:        U('1499636673687-f90e5f61e54c'), // Kürbis/Warm
-  roast:         U('1544025162-d76538b2a49e'),    // Braten
-  lamb:          U('1540420773420-3366772f4999'), // Lamm (warm, rustikal)
-  chicken:       U('1512621776951-a57df7302669'), // Hähnchen
-  pizza:         U('1565299624946-b28f40a0ae38'), // Pizza
-  gnocchi:       U('1476224203421-9ac39bcb3327'), // Gnocchi/Pasta
-  spicedOrange:  U('1490645935967-10de6ba17061'), // Würzig-Orange
-};
-
-export const BASELINE_PHOTO_MAP: Record<string, string> = {
-  // Vegetarisch
-  'r_1772621457909_vw1wd': FOOD.quiche,        // Porreetorte
-  'r_1772621457909_10dkb': FOOD.indischCurry,  // Gemüse Tikka Masala
-  'r_1772621457909_v0c00': FOOD.gruen,         // Grünkohl
-  'r_1772621457909_l6suy': FOOD.gemuese,       // Backofengemüse Feta
-  'r_1772621457909_p0c3n': FOOD.stew,          // Shepherd's Pie
-  'r_1772621457909_p246b': FOOD.grainBowl,     // Bulgur-Pfanne
-  'r_1772621457910_bng9k': FOOD.asianFood,     // Erdnuss-Soße
-  'r_1772621457910_k8hdn': FOOD.burger,        // Süßkartoffel-Burger
-  'r_1772621457910_ba1or': FOOD.gratin,        // Kartoffel-Möhren-Gratin
-  'r_1772621457910_lf1sn': FOOD.tomateSauce,   // Süßkartoffeln Tomaten
-  'r_1772621457910_q3b1q': FOOD.spicedOrange,  // Chaat-Masala
-  'r_1772621457910_qhwg7': FOOD.buntesGemuese, // Paprika/Polenta
-  'r_1772621457910_5fpa1': FOOD.gruen,         // Rosenkohl
-  'r_1772621457911_85x10': FOOD.asianFood,     // Asia-Gemüse
-  // Pasta
-  'r_1772621484425_93bk9': FOOD.spaghetti,     // Pasta al Cavolfiore
-  'r_1772621484425_t5ehd': FOOD.cremePasta,    // Spaghetti Lachs
-  'r_1772621484425_nfvrd': FOOD.gnocchi,       // Gnocchi
-  'r_1772621484426_9bl1s': FOOD.pesto,         // Spaghetti Pesto
-  'r_1772621484426_r5l1f': FOOD.pasta,         // Tagliatelle Emiliana
-  'r_1772621484426_anj69': FOOD.tomateSauce,   // Spaghetti Tomaten
-  'r_1772621484426_tm4ai': FOOD.cremePasta,    // Safran-Spaghetti
-  'r_1772621484427_1gbkr': FOOD.lasagne,       // Spinat-Lasagne
-  'r_1772621484427_4iv09': FOOD.spaghetti,     // Rigatoni al tonno
-  'r_1772621484427_tvchp': FOOD.pasta,         // Tagliatelle Ricotta
-  'r_1772621484427_13dle': FOOD.lasagne,       // Rote-Linsen-Lasagne
-  // Curry
-  'r_1772621503978_gmsyu': FOOD.linsencurry,   // Rote-Linsen-Curry
-  'r_1772621503979_o0jig': FOOD.indischCurry,  // Kartoffel-Curry
-  'r_1772621503979_e0rjf': FOOD.linsencurry,   // Belugalinsen-Curry
-  'r_1772621503980_6q2kw': FOOD.spicedOrange,  // Süßkartoffel-Lauch-Curry
-  'r_1772621503980_mvo04': FOOD.indischCurry,  // Berliner Gemüse-Curry
-  'r_1772621503981_nt2e0': FOOD.grainBowl,     // Kichererbsen-Spinat-Curry
-  'r_1772621503981_kg4ow': FOOD.stew,          // Kreolisches Chili
-  // Reis
-  'r_1772621546615_jvlnt': FOOD.risotto,       // Risotto
-  'r_1772621546616_zxw5g': FOOD.kurbis,        // Kürbisrisotto
-  // Fleisch
-  'r_1772621584220_k2hwg': FOOD.roast,         // Lammbraten
-  'r_1772621584220_f4177': FOOD.lamb,          // Lammkeule
-  'r_1772621584221_ei7uu': FOOD.lamb,          // Kebap
-  'r_1772621584221_150me': FOOD.stew,          // Rote-Bete-Topf
-  'r_1772621584222_z971c': FOOD.chicken,       // Hähnchenbrust
-  // Sonstiges
-  'r_1773152841812_qwn49': FOOD.pizza,         // Pizza
-};
+// Fotos werden zur Render-Zeit aus lokalen Kategorie-Assets aufgelöst
+// (siehe components/RecipeImage.tsx + constants/categoryPhotos.ts). Daher
+// kein Foto-Feld auf den Baseline-Rezepten.
 
 export const BASELINE_RECIPES: Recipe[] = [
   {

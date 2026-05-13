@@ -126,12 +126,12 @@ Beim App-Start (`app/_layout.tsx`) gilt seit den Cold-Start-Fixes folgende **Zwe
 
 **Phase 2 (deferred via `InteractionManager.runAfterInteractions`, nach UI sichtbar):**
 2. **`patchBaselineIngredients()`** — überschreibt `ingredients` + `portions` + `nutrition` aller Baseline-Rezepte wenn `INGREDIENTS_VERSION` veraltet. **Reichert dabei jede Zutat über `matchIngredient()` an** — setzt `baselineId`, `parsedQuantity`, `parsedUnit` und übernimmt `shopCategory` aus der Baseline.
-3. **`patchBaselinePhotos()`** — aktualisiert Foto-URLs wenn `PHOTO_VERSION` veraltet
+3. **`patchBaselinePhotos()`** — entfernt alte Unsplash-URLs von Baseline-Rezepten (Migrations-Pfad für Bestands-Installationen), damit `RecipeImage` auf lokale Kategorie-Bilder zurückfällt. User-Fotos (`file://`, andere URLs) und Fotos auf eigenen Rezepten bleiben unberührt.
 4. **`syncBaselineIfNeeded()`** + **`syncGiftsIfNeeded()` → `deliverPendingGifts()`** — fire-and-forget Gist-Syncs
 
 Migrationen müssen **runtime-fallback-tolerant** sein (siehe Memory `feedback_migration_fallback.md`). User könnte App vor Migrations-Ende interaktiv nutzen.
 
-**Versionsnummern in `recipeStore.ts` erhöhen um Migration auszulösen.** Aktuell: `INGREDIENTS_VERSION = '5'`, `PHOTO_VERSION = '4'`.
+**Versionsnummern in `recipeStore.ts` erhöhen um Migration auszulösen.** Aktuell: `INGREDIENTS_VERSION = '5'`, `PHOTO_VERSION = '5'`.
 
 ---
 
@@ -185,10 +185,10 @@ State: `showTemplateModal`, `templateMode: 'choose'|'pickRecipe'`, `allRecipes`,
 Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/KH aus `getMealDefaults(goals, type)` (in `nutritionGoals.ts`) vorbelegt — Tagesziele × konfiguriertem Anteil (`splits.frueh|mittag|abend|sonst`). Default-Auswahl je nach Einstiegspunkt: Mittag-Slot → 'mittag', Abend-Slot → 'abend', „Snack hinzufügen" → 'sonst'.
 
 ### Foto-Handling
-- Lokale Fotos: `FileSystem.documentDirectory + 'recipe_photos/' + recipeId + '.jpg'`
-- Baseline-Fotos: https-URLs aus `BASELINE_PHOTO_MAP`
+- Lokale User-Fotos: `FileSystem.documentDirectory + 'recipe_photos/' + recipeId + '.jpg'`
+- Baseline-Rezepte haben **kein `photo`-Feld** — `RecipeImage` löst sie zur Render-Zeit via `resolveCategoryPhoto(recipeId, category)` gegen lokale Assets in `assets/recipe-photos/` auf (kein Netzwerk-Roundtrip beim Erst-Start).
 - Default-Foto für neue Rezepte: HTTPS-URL (Unsplash) → `RecipeForm.handleSave` ruft `saveRecipePhoto` **nur** für `file://`-URIs auf, sonst wird die URI direkt als `photo` übernommen. Wichtig: HTTPS-URL durch `copyAsync` würde sonst werfen und das Speichern komplett abbrechen.
-- `RecipeImage.tsx`: Fallback auf `assets/images/food-fallback.jpg`
+- `RecipeImage.tsx` Auflösung: `uri` gesetzt → direkt nutzen; sonst `recipeId` → `resolveCategoryPhoto()`; sonst `assets/images/food-fallback.jpg`.
 - Web: FileSystem nicht verfügbar → Foto-Upload deaktiviert
 - Listen-Cards (`rezepte.tsx`, `pick.tsx`) verwenden **fixe Höhe** (`height: 180` / `160`) statt `aspectRatio`, damit Hochkant-Fotos das Layout nicht sprengen.
 

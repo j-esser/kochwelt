@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
-import { BASELINE_RECIPES, BASELINE_PHOTO_MAP } from '../constants/baselineRecipes';
+import { BASELINE_RECIPES } from '../constants/baselineRecipes';
 import { BASELINE_INGREDIENTS } from '../constants/ingredientBaseline';
 import { matchIngredient } from './ingredientBaseline';
 
@@ -61,11 +61,9 @@ const STORAGE_KEY = 'kochwelt_recipes';
 export async function seedIfEmpty(): Promise<void> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (raw !== null) return;
-  const withPhotos = BASELINE_RECIPES.map(r => ({
-    ...r,
-    photo: r.photo ?? BASELINE_PHOTO_MAP[r.id],
-  }));
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(withPhotos));
+  // Baseline-Rezepte ohne photo speichern — RecipeImage löst die Anzeige zur
+  // Render-Zeit via resolveCategoryPhoto(recipeId, category) gegen lokale Assets auf.
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(BASELINE_RECIPES));
   // Version-Keys gleich mitsetzen — beim Erst-Install sind die Baseline-Daten bereits
   // im aktuellen Stand. Verhindert, dass patchBaselineIngredients/patchBaselinePhotos
   // beim ersten Start nochmal voll durchläuft.
@@ -73,36 +71,27 @@ export async function seedIfEmpty(): Promise<void> {
   await AsyncStorage.setItem(PHOTO_VERSION_KEY, PHOTO_VERSION);
 }
 
-// Versionsnummer – erhöhen erzwingt komplette Neu-Migration aller Baseline-Fotos
-const PHOTO_VERSION = '4';
+// Versionsnummer – erhöhen erzwingt eine Foto-Migration
+const PHOTO_VERSION = '5';
 const PHOTO_VERSION_KEY = 'kochwelt_photo_version';
 
-// Titel-basierte Foto-Zuweisungen (Schlüssel = Substring im Titel, Kleinschreibung)
-const TITLE_PHOTO_MAP: Array<{ key: string; url: string }> = [
-  { key: 'pfannkuchen', url: 'https://images.unsplash.com/photo-1565299543923-37dd37887442?w=800&q=80' },
-];
+const BASELINE_IDS = new Set(BASELINE_RECIPES.map(r => r.id));
 
-// Ergänzt fehlende oder kaputte Fotos bei bereits gespeicherten Rezepten (versioniert)
+// Entfernt alte Unsplash-URLs von Baseline-Rezepten, damit RecipeImage auf die
+// lokalen Kategorie-Bilder zurückfällt. User-eigene Fotos (file://, andere URLs)
+// und Fotos auf eigenen Rezepten werden nicht angefasst.
 export async function patchBaselinePhotos(): Promise<void> {
   const version = await AsyncStorage.getItem(PHOTO_VERSION_KEY);
+  if (version === PHOTO_VERSION) return;
 
   const list = await loadAll();
   let changed = false;
 
   const patched = list.map(r => {
-    // Baseline-Rezepte: immer auf aktuelle Version bringen wenn Version veraltet
-    if (BASELINE_PHOTO_MAP[r.id] && version !== PHOTO_VERSION) {
+    if (BASELINE_IDS.has(r.id) && r.photo?.startsWith('https://images.unsplash.com')) {
       changed = true;
-      return { ...r, photo: BASELINE_PHOTO_MAP[r.id] };
-    }
-    // Titel-basierter Patch für Rezepte ohne Foto (sucht Substring im Titel)
-    if (!r.photo) {
-      const titleLower = r.title.toLowerCase();
-      const match = TITLE_PHOTO_MAP.find(t => titleLower.includes(t.key));
-      if (match) {
-        changed = true;
-        return { ...r, photo: match.url };
-      }
+      const { photo, ...rest } = r;
+      return rest as Recipe;
     }
     return r;
   });
