@@ -7,7 +7,7 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
-import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getSettings, saveSettings, scheduleReminder, cancelReminder,
@@ -565,12 +565,10 @@ export default function EinstellungenScreen() {
         <SectionHeader title="App-Info" />
         <SettingsCard>
           <Row icon="information-circle-outline" label="Version">
-            <Text style={s.rowValue}>
-              {Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? '?'}
-            </Text>
+            <Text style={s.rowValue}>{Application.nativeApplicationVersion ?? '?'}</Text>
           </Row>
           <Row icon="hammer-outline" label="Build" last>
-            <Text style={s.rowValue}>{Constants.nativeBuildVersion ?? '?'}</Text>
+            <Text style={s.rowValue}>{Application.nativeBuildVersion ?? '?'}</Text>
           </Row>
         </SettingsCard>
 
