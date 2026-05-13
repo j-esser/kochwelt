@@ -8,6 +8,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import * as Application from 'expo-application';
+import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getSettings, saveSettings, scheduleReminder, cancelReminder,
@@ -32,6 +33,21 @@ import { getAllRecipes, type Recipe } from '../../services/recipeStore';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
+
+// In Expo Go liefert expo-application die Host-App-Werte (also Expo Go selbst,
+// z.B. "55.0.34") statt der eigenen App-Version. Daher: in Expo Go aus app.json
+// lesen, sonst aus den nativen Metadaten.
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
+
+function appVersionLabel(): string {
+  if (isExpoGo) return Constants.expoConfig?.version ?? '?';
+  return Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '?';
+}
+
+function buildVersionLabel(): string {
+  if (isExpoGo) return 'Expo Go';
+  return Application.nativeBuildVersion ?? '?';
+}
 
 function SectionHeader({ title }: { title: string }) {
   return <Text style={s.sectionHeader}>{title}</Text>;
@@ -565,10 +581,10 @@ export default function EinstellungenScreen() {
         <SectionHeader title="App-Info" />
         <SettingsCard>
           <Row icon="information-circle-outline" label="Version">
-            <Text style={s.rowValue}>{Application.nativeApplicationVersion ?? '?'}</Text>
+            <Text style={s.rowValue}>{appVersionLabel()}</Text>
           </Row>
           <Row icon="hammer-outline" label="Build" last>
-            <Text style={s.rowValue}>{Application.nativeBuildVersion ?? '?'}</Text>
+            <Text style={s.rowValue}>{buildVersionLabel()}</Text>
           </Row>
         </SettingsCard>
 

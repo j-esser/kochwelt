@@ -295,11 +295,11 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 **Wichtig — Asset-IDs nicht persistieren**: Die `number`-Werte aus `require()` sind nur zur Render-Zeit gültig (Metro rotiert IDs bei jedem Build). Sie dürfen NIEMALS nach AsyncStorage geschrieben werden. `Recipe.photo` bleibt typmäßig `string | undefined`. Auflösung passiert nur im `RecipeImage`-Render via stabilen `recipeId` + `category`-Props.
 
 ### App-Info-Anzeige in den Einstellungen (1.5.1) — `app/(tabs)/einstellungen.tsx`
-Unterste Sektion „App-Info" zeigt Version + Build-Nummer über `expo-application`:
-- `Application.nativeApplicationVersion` (z.B. `1.5.1`) — entspricht `expo.version` aus `app.json`
-- `Application.nativeBuildVersion` — Android `versionCode` / iOS `buildNumber`. Wichtig, weil `expo.version` bei mehreren Builds gleich bleiben kann (nur Bugfix) — die Build-Nummer ist eindeutig pro EAS-Build.
-- Werte werden direkt aus nativen App-Metadaten gelesen, daher nur in nativen Builds sichtbar (in Expo Go / dev-server: `?`).
-- Vorgänger-Implementierung nutzte `expo-constants` (`nativeBuildVersion` deprecated seit SDK 49), das mit `appVersionSource: "remote"` `null` lieferte — nicht mehr verwenden.
+Unterste Sektion „App-Info" zeigt Version + Build-Nummer:
+- **Native Build** (TestFlight/Play Store): `Application.nativeApplicationVersion` (z.B. `1.5.1`) + `Application.nativeBuildVersion` (Android `versionCode` / iOS `buildNumber`).
+- **Expo Go**: `expo-application` liefert die Host-App-Werte (also Expo Go selbst, z.B. `55.0.34`) statt der eigenen App-Version. Daher Fallback via `Constants.executionEnvironment === 'storeClient'`: Version aus `Constants.expoConfig.version` lesen, Build als `"Expo Go"` anzeigen.
+- Hilfsfunktionen `appVersionLabel()` / `buildVersionLabel()` kapseln die Logik.
+- Vorgänger-Implementierung nutzte `Constants.nativeBuildVersion` (deprecated seit SDK 49), das mit `appVersionSource: "remote"` `null` lieferte — nicht mehr verwenden.
 
 ### Android Adaptive Icon (1.5.1) — `assets/images/android-icon-foreground.png`
 - **Nur** `adaptiveIcon.foregroundImage` wird auf Android gerendert — `expo.icon` ist iOS-only. Beim Update 1.5.1 wurde ein Expo-Default-Placeholder (blaues „A") entdeckt und durch das echte Logo ersetzt.
