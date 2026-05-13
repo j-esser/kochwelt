@@ -70,7 +70,7 @@ app/
 | Datei | Zuständigkeit |
 |---|---|
 | `components/RecipeForm.tsx` | Formular für Erstellen/Bearbeiten + URL-/Vorlage-/JSON-Import + Baseline-Chips + Nährwert-Auto-Berechnung |
-| `components/RecipeImage.tsx` | Bild mit Fallback auf `food-fallback.jpg` |
+| `components/RecipeImage.tsx` | Bild via `expo-image` (Memory + Disk Cache); Props: `uri`, `recipeId`, `category`. Bei leerer `uri` → lokales Kategorie-Asset via `resolveCategoryPhoto()`, sonst Fallback. |
 | `components/TipButton.tsx` | `?`-Icon (`help-circle-outline`), öffnet `TipModal` für einen Kontext |
 | `components/TipModal.tsx` | Bottom-Sheet mit Tipps (Cream-Orange-Boxen) |
 | `components/UnknownIngredientsModal.tsx` | Sammel-Dialog beim Speichern: pro unbekannter Zutat Name/Kategorie/Nährwerte pflegen → Eintrag in `kochwelt_user_ingredients` |
@@ -119,11 +119,17 @@ Alle | Pasta | Reis | Curry | Suppe | Fisch | Fleisch | Vegetarisch | Salat | Ei
 
 ## Migrations-Mechanismus
 
-Beim App-Start (`app/_layout.tsx`) werden drei Funktionen sequenziell aufgerufen:
+Beim App-Start (`app/_layout.tsx`) gilt seit den Cold-Start-Fixes folgende **Zweiphasen-Logik**:
 
-1. **`seedIfEmpty()`** — lädt 40 Basis-Rezepte beim allerersten Start
+**Phase 1 (blockierend, vor `SplashScreen.hideAsync()`):**
+1. **`seedIfEmpty()`** — lädt 40 Basis-Rezepte beim allerersten Start UND setzt direkt `INGREDIENTS_VERSION_KEY` + `PHOTO_VERSION_KEY` auf die aktuelle Version. Dadurch greifen Migrations bei Erst-Installation nicht (sie sind redundant auf frisch-geseedeten Daten).
+
+**Phase 2 (deferred via `InteractionManager.runAfterInteractions`, nach UI sichtbar):**
 2. **`patchBaselineIngredients()`** — überschreibt `ingredients` + `portions` + `nutrition` aller Baseline-Rezepte wenn `INGREDIENTS_VERSION` veraltet. **Reichert dabei jede Zutat über `matchIngredient()` an** — setzt `baselineId`, `parsedQuantity`, `parsedUnit` und übernimmt `shopCategory` aus der Baseline.
 3. **`patchBaselinePhotos()`** — aktualisiert Foto-URLs wenn `PHOTO_VERSION` veraltet
+4. **`syncBaselineIfNeeded()`** + **`syncGiftsIfNeeded()` → `deliverPendingGifts()`** — fire-and-forget Gist-Syncs
+
+Migrationen müssen **runtime-fallback-tolerant** sein (siehe Memory `feedback_migration_fallback.md`). User könnte App vor Migrations-Ende interaktiv nutzen.
 
 **Versionsnummern in `recipeStore.ts` erhöhen um Migration auszulösen.** Aktuell: `INGREDIENTS_VERSION = '5'`, `PHOTO_VERSION = '4'`.
 
@@ -265,6 +271,27 @@ Chips für Frühstück/Mittag/Abend/Snack. Bei Auswahl werden kcal/Protein/Fett/
 **Konfiguration**: `BASELINE_GIST_URL` zeigt seit 1.4.0 auf einen öffentlichen Gist (`gist.github.com/j-esser/1f71eb989c5e7d2c189cf6bdb8255583`, Datei `baseline.json`). Wenn der Sync-Mechanismus für ein anderes Repo wiederverwendet werden soll, hier die Raw-URL eintragen.
 
 **Schutz vor Datenverlust**: Sync schreibt ausschließlich in den Remote-Cache (`kochwelt_baseline_remote` + `_meta`). Weder `kochwelt_user_ingredients` noch `kochwelt_recipes` werden angefasst.
+
+### Cold-Start-Performance & Kategorie-Bilder
+
+**Problem (1.5.x)**: Auf Android dauerte der erste App-Start mehrere Minuten mit ANR-Meldung. Drei Ursachen:
+1. 40 parallele Unsplash-Downloads beim ersten Render (`react-native` `Image`, kein Disk-Cache)
+2. `patchBaselineIngredients()` lief beim Erst-Install voll durch (Version-Keys nicht gesetzt → Skip-Guard greift erst beim zweiten Start) — pro Aufruf ~400× `matchIngredient()`, dabei zehntausende RegExp-Konstruktionen
+3. Splash blockierte bis alle 3 Migrations fertig waren
+
+**Fixes (ab Commit `4884814` + `c5ea1d7`)**:
+- **Splash-Dismiss früher** (`app/_layout.tsx`): nur `seedIfEmpty()` blockiert; Migrations + Syncs laufen via `InteractionManager.runAfterInteractions()` nach UI-Anzeige
+- **`seedIfEmpty()` setzt Version-Keys**: beim Erst-Install läuft keine Migration mehr (redundant auf frisch-geseedeten Daten)
+- **Index-Map + Pre-compiled Regex** in `findBaselineMatch()` (`services/ingredientBaseline.ts`): Modul-Level-Cache `_exactIndex` + `_fuzzyTable`, ~30-50× Migrations-Speedup
+- **`expo-image` statt `react-native` `Image`** (`components/RecipeImage.tsx`): Memory + Disk Cache, parallele Native-Dekodierung
+- **Lokale Kategorie-Bilder** (`constants/categoryPhotos.ts` + `assets/recipe-photos/`): 6 Bilder gebundelt, deterministischer Hash-Resolver. Keine Unsplash-Downloads mehr beim Erst-Start.
+
+**`constants/categoryPhotos.ts` — Asset-Resolver**:
+- `CATEGORY_PHOTOS: Record<string, number[]>` — Asset-IDs pro Rezept-Kategorie
+- `resolveCategoryPhoto(recipeId, category)` — Hash-basierte deterministische Auswahl (gleiche `recipeId` → gleiches Bild, kein Flackern bei Re-Render)
+- Aktuelle Bilder pro Kategorie: 1 Bild. Doppel-Verwendung für Kategorien ohne eigenes Bild: Fleisch teilt reis-1, Salat teilt vegetarisch-1, Eintopf teilt suppe-1.
+
+**Wichtig — Asset-IDs nicht persistieren**: Die `number`-Werte aus `require()` sind nur zur Render-Zeit gültig (Metro rotiert IDs bei jedem Build). Sie dürfen NIEMALS nach AsyncStorage geschrieben werden. `Recipe.photo` bleibt typmäßig `string | undefined`. Auflösung passiert nur im `RecipeImage`-Render via stabilen `recipeId` + `category`-Props.
 
 ### Geschenk-Rezepte (Stufe 1) — `services/giftRecipes.ts`
 **Idee**: Kuratierte „Geschenk-Rezepte" werden über einen separaten Gist verteilt. Beim App-Start synct die App, importiert fällige Geschenke via `saveRecipe()` und merkt sich gelieferte IDs in `kochwelt_gifts_delivered`. Ein Banner auf der Rezepte-Liste informiert über ungelesene Geschenke.
