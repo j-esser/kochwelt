@@ -41,7 +41,7 @@ function PickerCard({
   const teaser = buildTeaser(recipe);
   return (
     <View style={[s.card, isGrid ? s.cardGrid : s.cardSingle]}>
-      <RecipeImage uri={recipe.photo} style={s.cardThumb} />
+      <RecipeImage uri={recipe.photo} recipeId={recipe.id} category={recipe.categories[0]} style={s.cardThumb} />
       <View style={[s.cardBody]}>
       <View style={s.cardTop}>
         <Text style={s.cardTitle} numberOfLines={2}>{recipe.title}</Text>

@@ -185,7 +185,7 @@ export default function RecipeDetailScreen() {
 
       <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Hero-Bild */}
-        <RecipeImage uri={recipe.photo} style={s.heroImage} />
+        <RecipeImage uri={recipe.photo} recipeId={recipe.id} category={recipe.categories[0]} style={s.heroImage} />
 
         {/* Header-Karte */}
         <View style={[s.headerCard, { marginTop: -24, borderTopLeftRadius: 24, borderTopRightRadius: 24 }]}>

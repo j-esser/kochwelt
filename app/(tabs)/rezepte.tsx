@@ -82,7 +82,7 @@ function RecipeCard({
       activeOpacity={0.7}
       style={[styles.card, isGrid ? styles.cardGrid : styles.cardSingle]}
     >
-      <RecipeImage uri={recipe.photo} style={styles.cardThumb} />
+      <RecipeImage uri={recipe.photo} recipeId={recipe.id} category={recipe.categories[0]} style={styles.cardThumb} />
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
           <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={2}>{recipe.title}</Text>

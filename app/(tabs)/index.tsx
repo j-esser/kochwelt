@@ -8,7 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAllRecipes, type Recipe } from '../../services/recipeStore';
 import { getWeekStats, type WeekStats } from '../../services/plannerStore';
 
-const FOOD_IMAGE = 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80';
+// Lokales Hero-Asset — kein Unsplash-Download beim Erst-Start.
+const FOOD_IMAGE = require('../../assets/recipe-photos/vegetarisch-1.jpg');
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -116,7 +117,7 @@ function FeaturedCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={s.featuredCard}>
       <View style={s.featuredPhotoWrap}>
-        <RecipeImage uri={recipe.photo} style={StyleSheet.absoluteFill} />
+        <RecipeImage uri={recipe.photo} recipeId={recipe.id} category={recipe.categories[0]} style={StyleSheet.absoluteFill} />
         <LinearGradient colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.65)']} style={[s.featuredGradient, { flexDirection: 'row', alignItems: 'flex-end' }]}>
           {content}
         </LinearGradient>
@@ -128,7 +129,7 @@ function FeaturedCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void
 function QuickRecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.75} style={s.quickCard}>
-      <RecipeImage uri={recipe.photo} style={s.quickThumb} />
+      <RecipeImage uri={recipe.photo} recipeId={recipe.id} category={recipe.categories[0]} style={s.quickThumb} />
       <View style={{ flex: 1 }}>
         <Text style={s.quickTitle} numberOfLines={2}>{recipe.title}</Text>
         <Text style={s.quickMeta}>{recipe.cookTime} min · {recipe.categories[0] ?? '—'}</Text>
@@ -163,7 +164,7 @@ export default function HomeScreen() {
 
         {/* Hero */}
         <View style={s.hero}>
-          <Image source={{ uri: FOOD_IMAGE }} style={s.heroImage} resizeMode="cover" />
+          <Image source={FOOD_IMAGE} style={s.heroImage} resizeMode="cover" />
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.65)']}
             style={s.heroOverlay}
