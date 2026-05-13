@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { tipsFor, CONTEXT_LABELS } from '../services/tips';
 import { TipModal } from './TipModal';
@@ -28,15 +28,15 @@ export function TipButton({ context, size = 20, color = '#a8a29e', style, title 
 
   return (
     <>
-      <TouchableOpacity
+      <Pressable
         onPress={() => setOpen(true)}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={style}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        style={[{ padding: 6, minWidth: 32, minHeight: 32, alignItems: 'center', justifyContent: 'center' }, style]}
         accessibilityLabel="Tipps anzeigen"
         accessibilityRole="button"
       >
         <Ionicons name="help-circle-outline" size={size} color={color} />
-      </TouchableOpacity>
+      </Pressable>
 
       <TipModal
         visible={open}
