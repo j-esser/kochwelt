@@ -119,11 +119,9 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
   const [ingredientsText, setIngredientsText] = useState(
     initial?.ingredients.map(i => `${i.amount} ${i.name}`.trim()).join('\n') ?? ''
   );
-  // Generisches Fallback-Foto für neue Rezepte (Kochutensilien)
-  const DEFAULT_PHOTO = 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80';
-  const [photoUri, setPhotoUri] = useState<string | null>(
-    initial?.photo ?? (initial ? null : DEFAULT_PHOTO)
-  );
+  // Kein Default-Foto bei neuen Rezepten — RecipeImage löst zur Render-Zeit
+  // ein lokales Kategorie-Bild via resolveCategoryPhoto() auf.
+  const [photoUri, setPhotoUri] = useState<string | null>(initial?.photo ?? null);
 
   // Import state
   const [showUrlInput, setShowUrlInput] = useState(false);
