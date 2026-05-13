@@ -52,7 +52,8 @@
       "expo-sqlite",
       "expo-sharing",
       "./plugins/withChromebookSupport.js",
-      "expo-image"
+      "expo-image",
+      "expo-share-intent"
     ],
     "experiments": {
       "typedRoutes": true

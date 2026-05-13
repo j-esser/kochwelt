@@ -1,12 +1,21 @@
 import '../global.css';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { InteractionManager } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useShareIntent } from 'expo-share-intent';
 import { seedIfEmpty, patchBaselinePhotos, patchBaselineIngredients } from '../services/recipeStore';
 import { syncBaselineIfNeeded } from '../services/baselineSync';
 import { syncGiftsIfNeeded, deliverPendingGifts } from '../services/giftRecipes';
+
+// Extrahiert die erste http(s)-URL aus freiem Text (Share-Intents von Android
+// liefern oft "Tolles Rezept: https://chefkoch.de/rezepte/123/foo.html").
+function extractUrl(text: string | null | undefined): string | null {
+  if (!text) return null;
+  const match = text.match(/https?:\/\/[^\s]+/i);
+  return match ? match[0] : null;
+}
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -17,6 +26,9 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const router = useRouter();
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+
   useEffect(() => {
     (async () => {
       // Nur seedIfEmpty bleibt im blockierenden Pfad — sicherzustellen, dass beim
@@ -40,6 +52,18 @@ export default function RootLayout() {
       });
     })();
   }, []);
+
+  // Share-Intent: wenn Kochwelt aus dem Android-Share-Sheet (z.B. Chefkoch) als
+  // Ziel gewählt wurde, ziehen wir die enthaltene URL und springen direkt in
+  // "Neues Rezept" mit auto-Import.
+  useEffect(() => {
+    if (!hasShareIntent) return;
+    const url = shareIntent.webUrl || extractUrl(shareIntent.text);
+    if (url) {
+      router.push({ pathname: '/recipe/new', params: { importUrl: url } });
+    }
+    resetShareIntent();
+  }, [hasShareIntent, shareIntent, router, resetShareIntent]);
 
   return (
     <SafeAreaProvider>
