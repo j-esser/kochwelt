@@ -7,6 +7,7 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
+import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getSettings, saveSettings, scheduleReminder, cancelReminder,
@@ -561,6 +562,18 @@ export default function EinstellungenScreen() {
           </TouchableOpacity>
         )}
 
+        <SectionHeader title="App-Info" />
+        <SettingsCard>
+          <Row icon="information-circle-outline" label="Version">
+            <Text style={s.rowValue}>
+              {Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? '?'}
+            </Text>
+          </Row>
+          <Row icon="hammer-outline" label="Build" last>
+            <Text style={s.rowValue}>{Constants.nativeBuildVersion ?? '?'}</Text>
+          </Row>
+        </SettingsCard>
+
         <View style={{ height: 32 }} />
       </KeyboardAwareScrollView>
     </SafeAreaView>
@@ -592,6 +605,7 @@ const s = StyleSheet.create({
   rowIcon: { marginRight: 12 },
   rowLabel: { fontSize: 15, color: '#1c1917', fontWeight: '500', flex: 1 },
   rowRight: { alignItems: 'flex-end' },
+  rowValue: { fontSize: 15, color: '#78716c', fontWeight: '500' },
 
   segRow: { flexDirection: 'row', gap: 6 },
   seg: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: '#f5f5f4', borderWidth: 1, borderColor: '#e7e5e4' },
