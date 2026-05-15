@@ -160,18 +160,21 @@ Migrationen müssen **runtime-fallback-tolerant** sein (siehe Memory `feedback_m
   - **Als Erinnerung**: `shoppingListToICS()` → `.ics`-Datei → `Sharing.shareAsync()` → iOS Reminders via AirDrop
 
 ### Browser-Import / Deep Link / Share-Intent — `components/RecipeForm.tsx`
-- **Clipboard-Erkennung** (1.5.1): Beim Öffnen von „Neues Rezept" wird die Zwischenablage geprüft. Es wird **nur** für URLs von bekannten Rezept-Domains (`RECIPE_DOMAINS`-Whitelist: chefkoch.de, eatsmarter.de, lecker.de, kuechengoetter.de, ...) ein Import-Alert angeboten — und jede URL höchstens einmal (Dedup über AsyncStorage-Key `kochwelt_last_clipboard_url`).
+- **Clipboard-Erkennung** (1.5.1, Banner ab 1.5.2): Beim Öffnen von „Neues Rezept" wird die Zwischenablage geprüft. Es wird **nur** für URLs von bekannten Rezept-Domains (`RECIPE_DOMAINS`-Whitelist: chefkoch.de, eatsmarter.de, lecker.de, kuechengoetter.de, ...) ein Import-Hinweis angeboten — und jede URL höchstens einmal (Dedup über AsyncStorage-Key `kochwelt_last_clipboard_url`). Statt eines blockierenden `Alert` zeigt das Formular einen **dezenten, wegklickbaren Banner** oben (`clipboardUrl`-State): Tap = `handleUrlImport`, „×" = ignorieren. Grund für den Wechsel: der modale Alert nervte auf Android bei jedem Öffnen, wenn zufällig eine Rezept-URL in der Zwischenablage lag.
 - **Deep Link**: `kochwelt://recipe/new?importUrl=<encoded-url>` öffnet das Formular und startet den Import automatisch (mit Lade-Overlay). Wird von `new.tsx` via `useLocalSearchParams` gelesen.
-- **Android Share-Sheet** (1.5.1): Über `expo-share-intent` (Config-Plugin in `app.json`). In `app/_layout.tsx` läuft ein `useShareIntent()`-Hook: wenn die App aus einem SEND/text-Intent (z.B. Chefkoch → Teilen → Kochwelt) gestartet wird, extrahiert ein Effect die URL aus `shareIntent.webUrl` (oder via Regex aus `shareIntent.text`) und navigiert zu `/recipe/new?importUrl=...`. `resetShareIntent()` danach, damit der Intent nicht erneut feuert.
-- **iOS**: Kein nativer Share-Sheet-Eintrag ohne Share Extension. Clipboard-Flow ist der empfohlene Weg. Share Extension ist für eine spätere Version geplant.
+- **Share-Sheet (Android + iOS)** (Android: 1.5.1, iOS: 1.5.2): Über `expo-share-intent` (Config-Plugin in `app.json`, cross-platform). In `app/_layout.tsx` läuft ein `useShareIntent()`-Hook: wenn die App aus einem Share-Intent gestartet wird (Android SEND/text-Intent, iOS Share Extension aus Safari/anderer App), extrahiert ein Effect die URL aus `shareIntent.webUrl` (oder via Regex aus `shareIntent.text`) und navigiert zu `/recipe/new?importUrl=...`. `resetShareIntent()` danach, damit der Intent nicht erneut feuert. iOS-Konfig in `app.json` als Plugin-Tupel mit `iosActivationRules`: WebURL + WebPage (jeweils maxCount 1) — d.h. die Kochwelt-Extension erscheint in iOS-Share-Sheets, wenn genau **eine** URL geteilt wird.
 
 ### Vorlage-/Import-Modal — `components/RecipeForm.tsx`
 Klick auf „JSON / Vorlage" im Import-Bereich öffnet ein Bottom-Sheet-Modal mit drei Optionen:
 - **Beispiel-Vorlage**: Füllt das Formular mit Dummy-Daten (Titel, Zutaten, Zubereitung, Nährwerte, Kategorie). Konstant `RECIPE_TEMPLATE` in `RecipeForm.tsx`.
 - **Aus vorhandenem Rezept**: Zeigt eine durchsuchbare Liste aller Rezepte (`getAllRecipes()`). Bei Klick werden alle Felder vorbelegt (Titel mit „(Kopie)"-Suffix), ohne `id`/`photo`/`rating` — das wird beim Speichern ein neues Rezept.
-- **JSON-Datei importieren**: Bestehender DocumentPicker-Flow (Web-App-Export-JSON).
+- **JSON-Datei importieren**: DocumentPicker-Flow. `handleJsonImport()` ist der Dispatcher, `runJsonImport()` macht die Arbeit.
+  - **iOS-Picker-Race (1.5.2-Fix)**: Auf iOS kann der System-Picker nicht präsentiert werden, solange die Modal-Dismiss-Animation läuft (sonst sofortiger Fehler ohne sichtbaren Picker). Lösung: auf iOS wird die Picker-Aktion in `afterModalDismiss` (Ref) geparkt und erst im `onDismiss`-Callback des Modals gestartet. Android hat das Problem nicht → direkter Aufruf.
+  - **Datei lesen (1.5.2-Fix)**: `FileSystem.readAsStringAsync(uri)` aus `expo-file-system/legacy` statt `fetch(uri)`. `fetch()` auf lokale `file://`/`content://`-URIs ist in RN unzuverlässig und war die Ursache für „JSON-Datei konnte nicht gelesen werden." auf **beiden** Plattformen.
+  - **Encoding-Härtung (1.5.2)**: `repairMojibake()` läuft über den Datei-Text vor `JSON.parse`. Erkennt den klassischen „UTF-8-als-Latin-1"-Schaden per Marker-Regex (`/[ÂÃâðø][-¿]/`) und dekodiert die Zeichencodes manuell als UTF-8-Bytes (1–4 Byte, inkl. Emoji). Kein `TextDecoder` (Hermes unzuverlässig). Heuristik: bricht ab, wenn ein echtes Mehrbyte-Zeichen (> 0xFF) vorkommt → sauber kodierte Dateien bleiben unangetastet. Deckt den realistischen Fall (Quelle UTF-8, falsch gespeichert) ab, **nicht** beliebige Fremd-Charsets.
+  - Übernommene Felder: `title` (Pflicht), `description`, `cookTime`, `portions`, `ingredients[].{name,amount}`, `reference`, `nutrition.{kcal,protein,fat,carbs}`, `categories`. `id`/`photo`/`rating` werden ignoriert. Array → erstes Element.
 
-State: `showTemplateModal`, `templateMode: 'choose'|'pickRecipe'`, `allRecipes`, `recipeSearch`. `applyImport()` setzt jetzt auch `protein/fat/carbs`.
+State: `showTemplateModal`, `templateMode: 'choose'|'pickRecipe'`, `allRecipes`, `recipeSearch`, `clipboardUrl`. Ref `afterModalDismiss`. `applyImport()` setzt auch `protein/fat/carbs`. Format-Hilfe als Tipp `json-import-format` (Kontext `recipe-form-import`) — erscheint im `?`-Icon des Import-Bereichs und in der Tipps-Sektion der Einstellungen.
 
 ### Tastatur-Behandlung — `react-native-keyboard-aware-scroll-view`
 - Wird in `RecipeForm.tsx` und `app/(tabs)/einstellungen.tsx` verwendet (`KeyboardAwareScrollView` statt `ScrollView`).
@@ -307,6 +310,14 @@ Unterste Sektion „App-Info" zeigt Version + Build-Nummer:
 - `backgroundColor: "#ffffff"`, kein `backgroundImage` mehr (alter Placeholder waren Hilfslinien!), kein `monochromeImage` (Themed Icons nur sinnvoll mit echter Silhouette, die das voll gefüllte Logo nicht hergibt).
 - Wenn das Icon getauscht werden soll: Python-Snippet aus dem Commit `d4c97a8` wiederverwenden.
 
+### iOS Share Extension Build-Setup (1.5.2)
+- `expo-share-intent` in `app.json` als Plugin-Tupel mit `iosActivationRules` (WebURL + WebPage, je maxCount 1). Damit erscheint Kochwelt im iOS-Share-Sheet, wenn aus Safari/anderer App eine Webseite mit URL geteilt wird.
+- **patch-package**: `expo-share-intent` benötigt einen Workaround für das transitive `xcode@3.0.1`-Paket (sonst bricht `prebuild` mit „Cannot read properties of null (reading 'path')" auf dem Share-Extension-Target). Setup:
+  - `patches/xcode+3.0.1.patch` ist eingecheckt (Quelle: [expo-share-intent example](https://github.com/achorein/expo-share-intent/blob/main/example/basic/patches/xcode%2B3.0.1.patch))
+  - `patch-package` ist als `devDependency` installiert; `package.json` hat `"postinstall": "patch-package"` → wird bei jedem `npm install` automatisch ausgeführt
+- **EAS-Build**: Beim ersten iOS-Build nach Plugin-Aktivierung fragt EAS nach Provisioning Profiles für das neue Share-Extension-Target (Bundle-ID: `<bundle>.ShareExtension`). Wichtig (laut Library-README): nur **ein** Extension-Target setzen, sonst läuft Expo's Auto-Config in einen `appExtensions`-Override im `app.json` rein.
+- **Test**: Share Extension funktioniert im Simulator nur eingeschränkt — finaler Test auf echtem Gerät via TestFlight.
+
 ### Geschenk-Rezepte (Stufe 1) — `services/giftRecipes.ts`
 **Idee**: Kuratierte „Geschenk-Rezepte" werden über einen separaten Gist verteilt. Beim App-Start synct die App, importiert fällige Geschenke via `saveRecipe()` und merkt sich gelieferte IDs in `kochwelt_gifts_delivered`. Ein Banner auf der Rezepte-Liste informiert über ungelesene Geschenke.
 
@@ -351,15 +362,13 @@ Ausführung: `npx tsx scripts/<name>.ts` (nicht `ts-node` — bricht an Expo's `
 ## Bekannte Einschränkungen
 
 - Expo Go inkompatibel mit iOS 26+ → iOS Simulator (Xcode) nutzen
-- Expo Go inkompatibel mit `expo-share-intent` (native Modul) → für Android-Share-Tests Custom Dev Client oder Release Build verwenden
+- Expo Go inkompatibel mit `expo-share-intent` (native Modul) → für Share-Sheet-Tests Custom Dev Client oder Release Build verwenden (gilt auf beiden Plattformen)
 - User-Daten (Rezepte, Wochenplan, eigene Zutaten) nur lokal in AsyncStorage. Nur die Baseline-Zutaten-Liste wird via Gist read-only synchronisiert.
-- iOS Share Extension (direkter Safari-Share-Sheet-Eintrag) noch nicht implementiert (Android funktioniert über `expo-share-intent` seit 1.5.1)
 
 ---
 
 ## Roadmap
 
-- ⏳ iOS Share Extension (nativer Share-Sheet-Eintrag in Safari)
 - ⏳ Nährwert-Statistiken (Charts)
 - ⏳ Push-Erinnerungen (Kochen-Erinnerung)
 - ⏳ Cloud-Sync für User-Rezepte und eigene Zutaten (Supabase)

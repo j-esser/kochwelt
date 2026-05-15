@@ -32,6 +32,7 @@ function isRecipeUrl(text: string): boolean {
 }
 import { useRouter, Stack } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
@@ -79,6 +80,38 @@ function parseDuration(d: string): number {
   const m = d.match(/PT(?:(\d+)H)?(?:(\d+)M)?/i);
   if (!m) return 40;
   return (parseInt(m[1] ?? '0') * 60) + parseInt(m[2] ?? '0');
+}
+
+// Repariert "Mojibake": UTF-8-Bytes, die fälschlich als Latin-1 interpretiert
+// wurden (ü → Ã¼, • → â¢, 🍀 → ð\x9f...). Wird ausgelöst, wenn der typische
+// Marker (Ã/Â/â/ð/ø + Continuation-Byte) auftaucht UND der gesamte String im
+// Latin-1-Bereich (≤ 0xFF) liegt — dann sind die Zeichencodes die Original-
+// Bytes und werden manuell als UTF-8 dekodiert. Hermes hat kein zuverlässiges
+// TextDecoder, daher die explizite Decodierung. Heuristik: lässt korrekt
+// kodierte Dateien unangetastet.
+function repairMojibake(s: string): string {
+  // Marker: UTF-8-Lead-Byte-Zeichen (C3/C2/E2/F0/F8) + Continuation-Byte.
+  if (!/[\u00C2\u00C3\u00E2\u00F0\u00F8][\u0080-\u00BF]/.test(s)) return s;
+  const bytes: number[] = [];
+  for (const ch of s) {
+    const c = ch.charCodeAt(0);
+    if (c > 0xff) return s; // echtes Mehrbyte-Zeichen -> kein reines Latin-1-Mapping
+    bytes.push(c);
+  }
+  let out = '';
+  for (let i = 0; i < bytes.length; ) {
+    const b = bytes[i];
+    if (b < 0x80) { out += String.fromCharCode(b); i += 1; }
+    else if (b >= 0xc0 && b < 0xe0 && i + 1 < bytes.length) {
+      out += String.fromCharCode(((b & 0x1f) << 6) | (bytes[i + 1] & 0x3f)); i += 2;
+    } else if (b >= 0xe0 && b < 0xf0 && i + 2 < bytes.length) {
+      out += String.fromCharCode(((b & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f)); i += 3;
+    } else if (b >= 0xf0 && i + 3 < bytes.length) {
+      const cp = ((b & 0x07) << 18) | ((bytes[i + 1] & 0x3f) << 12) | ((bytes[i + 2] & 0x3f) << 6) | (bytes[i + 3] & 0x3f);
+      out += String.fromCodePoint(cp); i += 4;
+    } else { out += String.fromCharCode(b); i += 1; }
+  }
+  return out;
 }
 
 // ─── JSON-LD Recipe extractor ─────────────────────────────────────────────────
@@ -157,6 +190,14 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
   const [templateMode, setTemplateMode] = useState<'choose' | 'pickRecipe'>('choose');
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [recipeSearch, setRecipeSearch] = useState('');
+  // Aktion, die nach dem vollständigen Schließen des Modals laufen soll.
+  // Nötig auf iOS: der System-Picker kann nicht präsentiert werden, solange
+  // die Modal-Dismiss-Animation noch läuft.
+  const afterModalDismiss = useRef<(() => void) | null>(null);
+
+  // Von der Clipboard-Erkennung vorgeschlagene Rezept-URL (dezenter Banner
+  // statt blockierendem Alert).
+  const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
 
   // Ingredient-Baseline state
   const [baseline, setBaseline] = useState<BaselineIngredient[]>([]);
@@ -199,14 +240,7 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         const lastSeen = await AsyncStorage.getItem(CLIPBOARD_LAST_KEY);
         if (lastSeen === text) return;
         await AsyncStorage.setItem(CLIPBOARD_LAST_KEY, text);
-        Alert.alert(
-          'Rezept-URL erkannt',
-          `Soll das Rezept von dieser Seite importiert werden?\n\n${text}`,
-          [
-            { text: 'Abbrechen', style: 'cancel' },
-            { text: 'Importieren', onPress: () => handleUrlImport(text) },
-          ]
-        );
+        setClipboardUrl(text);
       } catch { /* Clipboard-Zugriff nicht verfügbar */ }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -327,8 +361,21 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
     setShowTemplateModal(false);
   }
 
-  async function handleJsonImport() {
-    setShowTemplateModal(false);
+  // Schließt das Modal und startet den Picker. Auf iOS muss die
+  // Dismiss-Animation des Modals erst abgeschlossen sein (sonst schlägt die
+  // Präsentation des System-Pickers fehl) — daher über onDismiss verzögert.
+  // Android hat das Problem nicht, dort direkt starten.
+  function handleJsonImport() {
+    if (Platform.OS === 'ios') {
+      afterModalDismiss.current = runJsonImport;
+      setShowTemplateModal(false);
+    } else {
+      setShowTemplateModal(false);
+      runJsonImport();
+    }
+  }
+
+  async function runJsonImport() {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: 'application/json',
@@ -337,7 +384,7 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
       if (result.canceled) return;
 
       const uri = result.assets[0].uri;
-      const text = await fetch(uri).then(r => r.text());
+      const text = repairMojibake(await FileSystem.readAsStringAsync(uri));
       const data = JSON.parse(text);
 
       // Support single recipe or array (export from web-app)
@@ -356,6 +403,9 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
           ?.map((i: any) => `${i.amount ?? ''} ${i.name ?? ''}`.trim()).join('\n') ?? '',
         reference: recipe.reference,
         kcal: recipe.nutrition?.kcal != null ? String(recipe.nutrition.kcal) : '',
+        protein: recipe.nutrition?.protein != null ? String(recipe.nutrition.protein) : '',
+        fat: recipe.nutrition?.fat != null ? String(recipe.nutrition.fat) : '',
+        carbs: recipe.nutrition?.carbs != null ? String(recipe.nutrition.carbs) : '',
         categories: recipe.categories ?? [],
       });
     } catch (e) {
@@ -561,6 +611,30 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         extraScrollHeight={Platform.OS === 'ios' ? 20 : 80}
         extraHeight={140}
       >
+
+        {/* Clipboard-Hinweis: dezenter, wegklickbarer Banner */}
+        {!initial && clipboardUrl && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff7ed', borderRadius: 12, borderWidth: 1, borderColor: '#fed7aa', marginBottom: 12, paddingHorizontal: 12, paddingVertical: 10 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#ffedd5', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+              <Ionicons name="clipboard-outline" size={18} color="#f97316" />
+            </View>
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              activeOpacity={0.7}
+              onPress={() => { const u = clipboardUrl; setClipboardUrl(null); handleUrlImport(u); }}
+            >
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#c2410c' }}>Rezept-URL erkannt — importieren?</Text>
+              <Text style={{ fontSize: 12, color: '#9a3412' }} numberOfLines={1}>{clipboardUrl}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setClipboardUrl(null)}
+              style={{ marginLeft: 8 }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="close" size={16} color="#9a3412" />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Import-Bereich (nur bei neuem Rezept) */}
         {!initial && (
@@ -846,6 +920,11 @@ export default function RecipeForm({ initial, title, importUrl }: Props) {
         animationType="slide"
         transparent
         onRequestClose={() => setShowTemplateModal(false)}
+        onDismiss={() => {
+          const fn = afterModalDismiss.current;
+          afterModalDismiss.current = null;
+          fn?.();
+        }}
       >
         <Pressable
           style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.35)' }]}

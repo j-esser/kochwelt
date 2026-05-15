@@ -2,7 +2,7 @@
   "expo": {
     "name": "kochwelt",
     "slug": "kochwelt",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "kochwelt",
@@ -51,7 +51,15 @@
       "expo-sharing",
       "./plugins/withChromebookSupport.js",
       "expo-image",
-      "expo-share-intent"
+      [
+        "expo-share-intent",
+        {
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsWebPageWithMaxCount": 1
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

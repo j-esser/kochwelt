@@ -31,7 +31,7 @@ export const TIPS: Tip[] = [
     icon: 'clipboard-outline',
     title: 'URL aus Zwischenablage',
     body:
-      'Hast du in Safari/Chrome eine Rezept-URL kopiert? Beim Öffnen von „Neues Rezept" erkennt Kochwelt das automatisch und bietet den Import an.',
+      'Hast du in Safari/Chrome eine Rezept-URL kopiert? Beim Öffnen von „Neues Rezept" erkennt Kochwelt das automatisch und zeigt oben einen Hinweis — tippen zum Importieren, oder mit „×" wegwischen.',
   },
   {
     id: 'recipe-template',
@@ -40,6 +40,26 @@ export const TIPS: Tip[] = [
     title: 'Rezept als Vorlage nutzen',
     body:
       'Im Import-Bereich → „JSON / Vorlage" → „Aus vorhandenem Rezept" — Felder werden vorbelegt, Titel bekommt „(Kopie)". Ideal für Varianten.',
+  },
+  {
+    id: 'json-import-format',
+    context: 'recipe-form-import',
+    icon: 'code-slash-outline',
+    title: 'JSON-Datei: erwartetes Format',
+    body:
+      'Eine .json-Datei mit einem Rezept-Objekt oder einem Array (dann wird das erste Rezept genommen). Pflicht ist nur „title", alles andere ist optional und kann weggelassen werden — auch eine „id" wird nicht gebraucht (wird beim Speichern neu vergeben).\n\n' +
+      'Übernommene Felder:\n' +
+      '• title (Text) — Pflicht\n' +
+      '• description (Text) — Zubereitung\n' +
+      '• cookTime (Zahl) — Minuten\n' +
+      '• portions (Zahl)\n' +
+      '• ingredients — Liste aus { name, amount }, z. B. { "name": "Mehl", "amount": "200 g" }\n' +
+      '• reference (Text) — Quelle/URL\n' +
+      '• nutrition — { kcal, protein, fat, carbs } als Zahlen\n' +
+      '• categories — Liste aus Texten\n\n' +
+      'Foto und Bewertung werden nicht importiert. Umlaute/Emojis werden automatisch repariert, falls die Datei nicht sauber als UTF-8 gespeichert wurde.\n\n' +
+      'Minimal-Beispiel:\n' +
+      '[{ "title": "Porridge", "ingredients": [{ "name": "Haferflocken", "amount": "50 g" }] }]',
   },
 
   // ── recipes: Rezeptliste ────────────────────────────────────────────────────
