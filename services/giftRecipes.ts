@@ -253,9 +253,10 @@ export async function getGiftSyncStatus(): Promise<GiftSyncStatus> {
 
 // ─── Submission ───────────────────────────────────────────────────────────────
 
-// Empfänger für Rezept-Vorschläge. passinbox-Alias — kann jederzeit getauscht
-// werden, ohne dass die persönliche Mail-Adresse in der App auftaucht.
-const SUBMISSION_EMAIL = 'kochwelt.lens838@passinbox.com';
+// Empfänger für Rezept-/Zutaten-Vorschläge. passinbox-Alias — kann jederzeit
+// getauscht werden, ohne dass die persönliche Mail-Adresse in der App auftaucht.
+// Einzige Quelle der Wahrheit; auch von userIngredients.ts genutzt.
+export const SUBMISSION_EMAIL = 'kochwelt.lens838@passinbox.com';
 
 /**
  * Baut einen `mailto:`-Link, der die native Mail-App des Users mit Empfänger,

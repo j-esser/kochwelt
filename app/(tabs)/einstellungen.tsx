@@ -29,6 +29,7 @@ import {
   buildSubmissionUrl, GIFT_GIST_URL, type GiftSyncStatus,
 } from '../../services/giftRecipes';
 import { getAllRecipes, type Recipe } from '../../services/recipeStore';
+import { loadUserIngredients, buildIngredientSubmissionUrl } from '../../services/userIngredients';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -129,6 +130,25 @@ export default function EinstellungenScreen() {
   async function submitRecipe(recipe: Recipe) {
     setSubmitPickerOpen(false);
     const url = buildSubmissionUrl(recipe);
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) await Linking.openURL(url);
+      else Alert.alert('Fehler', 'Mail-App konnte nicht geöffnet werden. Bitte richte ein Mail-Konto auf dem Gerät ein.');
+    } catch {
+      Alert.alert('Fehler', 'Mail-App konnte nicht geöffnet werden.');
+    }
+  }
+
+  async function submitUserIngredients() {
+    const items = await loadUserIngredients();
+    if (items.length === 0) {
+      Alert.alert(
+        'Keine eigenen Zutaten',
+        'Du hast noch keine eigenen Zutaten angelegt. Sie entstehen, wenn du beim Speichern eines Rezepts unbekannte Zutaten ergänzt.'
+      );
+      return;
+    }
+    const url = buildIngredientSubmissionUrl(items);
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) await Linking.openURL(url);
@@ -473,6 +493,21 @@ export default function EinstellungenScreen() {
             <Ionicons name={syncing ? 'sync-outline' : 'cloud-download-outline'} size={16} color="#f97316" />
             <Text style={{ fontSize: 13, fontWeight: '600', color: '#f97316' }}>
               {syncing ? 'Wird synchronisiert…' : 'Jetzt aktualisieren'}
+            </Text>
+          </TouchableOpacity>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>
+            <Text style={{ fontSize: 13, color: '#57534e', lineHeight: 19 }}>
+              Hast du eigene Zutaten ergänzt? Sende sie ein — passende Einträge
+              wandern in die zentrale Datenbank und stehen dann allen zur Verfügung.
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, marginHorizontal: 16, marginBottom: 16, backgroundColor: '#1c1917', borderRadius: 10 }}
+            onPress={submitUserIngredients}
+          >
+            <Ionicons name="paper-plane-outline" size={16} color="#ffffff" />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#ffffff' }}>
+              Eigene Zutaten einsenden
             </Text>
           </TouchableOpacity>
         </SettingsCard>

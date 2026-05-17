@@ -61,7 +61,7 @@ app/
 | `services/settingsStore.ts` | App-Einstellungen, Benachrichtigungen, `defaultPlannerPortions` |
 | `services/tips.ts` | Zentrale Tipp-Liste (`TIPS`), `tipsFor(context)`, `allVisibleTips()`, plattform-Filter |
 | `services/ingredientBaseline.ts` | Parser, Matcher, Nährwert-Berechnung, Mengen-Konvertierung (`parseIngredientText`, `findBaselineMatch`, `matchIngredient`, `resolveAmountInBase`, `formatBaseAmount`, `calcNutritionFromMatches`, `calcNutritionFromIngredients`) |
-| `services/userIngredients.ts` | Persistenz für Nutzer-eigene Zutaten (`loadBaseline()`, `addUserIngredients()`) — merged Remote-Cache (falls vorhanden) ODER Bundle + AsyncStorage |
+| `services/userIngredients.ts` | Persistenz für Nutzer-eigene Zutaten (`loadBaseline()`, `addUserIngredients()`, `loadUserIngredients()`) — merged Remote-Cache (falls vorhanden) ODER Bundle + AsyncStorage; `buildIngredientSubmissionUrl()` (mailto: für Zutaten-Einsendung) |
 | `services/baselineSync.ts` | Gist-Sync für die Zutaten-Baseline. `syncBaselineIfNeeded()` (TTL 6h, fire-and-forget), `syncBaselineNow()` (manuell), `getCachedRemoteBaseline()`, `getBaselineSyncStatus()` |
 | `services/giftRecipes.ts` | Geschenk-Rezepte: Gist-Sync, `deliverPendingGifts()`, Banner-Queue, `buildSubmissionUrl()` (mailto:) |
 
@@ -346,7 +346,9 @@ Unterste Sektion „App-Info" zeigt Version + Build-Nummer:
 
 **Banner** (`components/GiftBanner.tsx`): rendert das erste Element aus `getUnreadGifts()`. Tap → `markGiftRead(id)` + Navigation zu Detail. X → `markGiftRead(id)` ohne Navigation. Mehrere ungelesene → „+N weitere"-Suffix.
 
-**Rezept einsenden** (`buildSubmissionUrl`): erzeugt `mailto:kochwelt.lens838@passinbox.com?subject=...&body=<JSON>`. Kein GitHub-Account nötig — nutzt die native Mail-App via `Linking.openURL`. passinbox-Alias hält die persönliche Mail-Adresse aus dem App-Quellcode raus.
+**Rezept einsenden** (`buildSubmissionUrl`): erzeugt `mailto:kochwelt.lens838@passinbox.com?subject=...&body=<JSON>`. Kein GitHub-Account nötig — nutzt die native Mail-App via `Linking.openURL`. passinbox-Alias hält die persönliche Mail-Adresse aus dem App-Quellcode raus. `SUBMISSION_EMAIL` ist in `giftRecipes.ts` als `export const` die einzige Quelle der Wahrheit.
+
+**Zutaten einsenden** (`buildIngredientSubmissionUrl` in `userIngredients.ts`): gleiches mailto-Muster für die komplette Liste der eigenen Zutaten (`loadUserIngredients()`). Button „Eigene Zutaten einsenden" in der Einstellungen-Sektion „Zutaten-Datenbank" → `submitUserIngredients()`; bei leerer Liste Hinweis-Alert. Der Empfänger kuratiert die Einsendung und übernimmt passende Einträge in den Baseline-Gist (`scripts/exportBaselineForGist.ts` → Version bumpen), von wo sie via Sync an alle User fließen. Bewusste Entscheidung gegen einen Voll-Export-/Re-Import-Round-Trip: der hätte mit dem read-only-Gist-Modell kollidiert (Remote-Cache vs. User-Schicht).
 
 ### Scripts (`scripts/`)
 - `auditBaselineIngredients.ts`: prüft Match-Quote der Baseline-Rezepte gegen Baseline-Zutaten, generiert Markdown-Report `scripts/baseline-audit.md`. Aktuell 100 % (438/438).
